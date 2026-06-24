@@ -75,7 +75,7 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 | `LANGUAGE` | `es` | Transcription language (`es`, `en`, … or `auto`) |
 | `DEVICE` | `cpu` | `cpu` or `cuda` for whisper + pyannote |
 | `COMPUTE_TYPE` | `int8` | faster-whisper compute type (`int8` CPU, `float16` GPU) |
-| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-3.1` | pyannote pipeline (real mode) |
+| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-community-1` | pyannote 4.x pipeline (real mode) |
 | `HUGGINGFACE_TOKEN` | — | Required for pyannote in real mode (see below) |
 | `MINUTES_PROVIDER` | `gemini` | `gemini` (hosted) or `ollama` (local, OSS, private) |
 | `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model id (`gemini-2.5-flash` recommended) |
@@ -91,9 +91,10 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
    pip install -e ".[dev,ml,nlp]"
    ```
 2. **Hugging Face / pyannote (diarization):** create a HF account, generate a read
-   token, and accept the gated terms for **both** `pyannote/speaker-diarization-3.1`
-   **and** `pyannote/segmentation-3.0`. Put the token in `HUGGINGFACE_TOKEN`. A plain
-   install will succeed but fail at runtime without this.
+   token, and accept the gated terms for
+   `pyannote/speaker-diarization-community-1` (the pyannote 4.x model). Put the
+   token in `HUGGINGFACE_TOKEN`. A plain install will succeed but fail at runtime
+   without this.
 3. **Minutes provider — pick one:**
    - **Gemini** (default, best quality, generous free tier): put your Google AI
      Studio key in `GEMINI_API_KEY`. Caveat: on the free tier Google may use your
@@ -104,8 +105,10 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 4. Set `ADAPTER_MODE=real` and restart the backend.
 
 > Note: the real models need real RAM/CPU (ideally a GPU) and will not run on
-> free deployment tiers. Deployment is intentionally frozen — see
-> [ADR-0002](docs/adr/0002-decoupled-audio-pipeline.md).
+> free deployment tiers. On CPU, diarization runs ~3× slower than realtime, so a
+> 10-minute recording can take 30+ minutes — use short audio or a GPU. The UI
+> poll cap is `VITE_MAX_POLL_MINUTES` (default 45). Deployment is intentionally
+> frozen — see [ADR-0002](docs/adr/0002-decoupled-audio-pipeline.md).
 
 ## Running tests
 

@@ -9,7 +9,14 @@ import type {
 } from '../types'
 
 const POLL_INTERVAL_MS = 2000
-const MAX_POLL_DURATION_MS = 10 * 60 * 1000 // 10 minutes
+// On CPU, real transcription + diarization can take tens of minutes. The backend
+// stays the source of truth; this cap only guards against unbounded polling.
+// Override with VITE_MAX_POLL_MINUTES.
+const _envMaxMinutes = Number(import.meta.env.VITE_MAX_POLL_MINUTES)
+const MAX_POLL_DURATION_MS =
+  (Number.isFinite(_envMaxMinutes) && _envMaxMinutes > 0 ? _envMaxMinutes : 45) *
+  60 *
+  1000
 
 interface UseTranscriptionJobReturn {
   state: AppState

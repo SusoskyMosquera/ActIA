@@ -24,6 +24,7 @@ dev = [
 ml = [
     "faster-whisper",
     "pyannote.audio",
+    "soundfile",
 ]
 nlp = [
     "google-genai",
