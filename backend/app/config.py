@@ -7,10 +7,24 @@ class Settings(BaseSettings):
 
     adapter_mode: str = "demo"  # "demo" | "real"
     demo_delay_seconds: float = 1.5
+
+    # Transcription (faster-whisper) — used when adapter_mode == "real"
     model_size: str = "small"
-    language: str = "es"
+    language: str = "es"  # "es", "en", ... or "auto"
+    device: str = "cpu"  # "cpu" | "cuda"
+    compute_type: str = "int8"  # e.g. "int8" (CPU) | "float16" (GPU)
+
+    # Diarization (pyannote.audio)
+    diarization_model: str = "pyannote/speaker-diarization-3.1"
     huggingface_token: str = ""
+
+    # Minutes generation — selectable provider
+    minutes_provider: str = "gemini"  # "gemini" | "ollama"
+    gemini_model: str = "gemini-1.5-flash"
     gemini_api_key: str = ""
+    ollama_base_url: str = "http://localhost:11434"
+    ollama_model: str = "qwen2.5:3b"
+
     job_ttl_seconds: int = 3600
 
 

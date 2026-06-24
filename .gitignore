@@ -31,4 +31,5 @@ Thumbs.db
 
 # --- Local tooling / personal config (not part of the app) ---
 .claude/settings.local.json
+.claude/launch.json
 .atl/

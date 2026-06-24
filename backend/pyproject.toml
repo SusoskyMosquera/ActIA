@@ -26,7 +26,8 @@ ml = [
     "pyannote.audio",
 ]
 nlp = [
-    "google-generativeai",
+    "google-genai",
+    "ollama",
 ]
 
 [tool.pytest.ini_options]

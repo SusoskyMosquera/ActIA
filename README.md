@@ -19,8 +19,9 @@ upload audio → transcribe → diarize → attribute speakers → generate minu
 - **Frontend:** React + TypeScript. Container/presentational split — all logic
   lives in the `useTranscriptionJob` hook; components only render.
 - **Processing:** `faster-whisper` (transcription) + `pyannote.audio`
-  (diarization) + Gemini (minutes). These are pluggable adapters behind domain
-  ports, so they can be swapped without touching the core.
+  (diarization) + minutes via **Gemini or a local LLM through Ollama**
+  (selectable). These are pluggable adapters behind domain ports, so they can be
+  swapped without touching the core.
 
 Architecture decisions are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 and the ADRs under [`docs/adr/`](docs/adr).
@@ -68,12 +69,19 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 
 | Variable | Default | Purpose |
 |----------|---------|---------|
-| `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + Gemini) |
+| `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + LLM) |
 | `DEMO_DELAY_SECONDS` | `1.5` | Per-stage delay in demo mode so the UI shows progress |
 | `MODEL_SIZE` | `small` | faster-whisper model size (real mode) |
-| `LANGUAGE` | `es` | Transcription language (real mode) |
+| `LANGUAGE` | `es` | Transcription language (`es`, `en`, … or `auto`) |
+| `DEVICE` | `cpu` | `cpu` or `cuda` for whisper + pyannote |
+| `COMPUTE_TYPE` | `int8` | faster-whisper compute type (`int8` CPU, `float16` GPU) |
+| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-3.1` | pyannote pipeline (real mode) |
 | `HUGGINGFACE_TOKEN` | — | Required for pyannote in real mode (see below) |
-| `GEMINI_API_KEY` | — | Required for minutes generation in real mode |
+| `MINUTES_PROVIDER` | `gemini` | `gemini` (hosted) or `ollama` (local, OSS, private) |
+| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model id (`gemini-2.5-flash` recommended) |
+| `GEMINI_API_KEY` | — | Required when `MINUTES_PROVIDER=gemini` |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Local Ollama server (`MINUTES_PROVIDER=ollama`) |
+| `OLLAMA_MODEL` | `qwen2.5:3b` | Local model id (`MINUTES_PROVIDER=ollama`) |
 | `JOB_TTL_SECONDS` | `3600` | In-memory job retention before cleanup |
 
 ## Switching to real processing
@@ -82,11 +90,17 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
    ```bash
    pip install -e ".[dev,ml,nlp]"
    ```
-2. **Hugging Face / pyannote:** create a HF account, accept the gated terms for
-   `pyannote/speaker-diarization-3.1`, and put your access token in
-   `HUGGINGFACE_TOKEN`. A plain install will succeed but fail at runtime without
-   this.
-3. **Gemini:** put your Google AI Studio key in `GEMINI_API_KEY`.
+2. **Hugging Face / pyannote (diarization):** create a HF account, generate a read
+   token, and accept the gated terms for **both** `pyannote/speaker-diarization-3.1`
+   **and** `pyannote/segmentation-3.0`. Put the token in `HUGGINGFACE_TOKEN`. A plain
+   install will succeed but fail at runtime without this.
+3. **Minutes provider — pick one:**
+   - **Gemini** (default, best quality, generous free tier): put your Google AI
+     Studio key in `GEMINI_API_KEY`. Caveat: on the free tier Google may use your
+     data to train its models — avoid for confidential meetings (or use Ollama).
+   - **Ollama** (fully local, open-source, private — nothing leaves your machine):
+     set `MINUTES_PROVIDER=ollama`, install [Ollama](https://ollama.com/download),
+     and run `ollama pull qwen2.5:3b`.
 4. Set `ADAPTER_MODE=real` and restart the backend.
 
 > Note: the real models need real RAM/CPU (ideally a GPU) and will not run on
@@ -119,6 +133,6 @@ ActIA/
 - [x] Backend skeleton (hexagonal) with tests
 - [x] Frontend skeleton (container/presentational + hooks) with tests
 - [x] Demo adapters — full pipeline runs end-to-end
-- [ ] Real adapters (faster-whisper / pyannote / Gemini)
+- [x] Real adapters implemented (faster-whisper / pyannote / Gemini + Ollama) — pending first run with real models/keys
 - [ ] File type/size validation (`400`/`413`) and periodic job cleanup
 - [ ] Deployment (frozen pending stakeholder approval)

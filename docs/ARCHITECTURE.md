@@ -10,6 +10,7 @@
 | 1 | Asynchronous processing: job + polling, in-memory state, no DB/Redis | [ADR-0001](./adr/0001-async-processing-model.md) |
 | 2 | Audio pipeline behind ports (hexagonal); deployment frozen, swap-ready | [ADR-0002](./adr/0002-decoupled-audio-pipeline.md) |
 | 3 | `faster-whisper` for transcription; pyannote.audio for diarization | [ADR-0003](./adr/0003-transcription-engine.md) |
+| 4 | Minutes provider selectable — Gemini default, Ollama (OSS/local) option | [ADR-0004](./adr/0004-minutes-provider.md) |
 
 ## Processing pipeline
 
