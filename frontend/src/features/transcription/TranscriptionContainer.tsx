@@ -26,7 +26,7 @@ export default function TranscriptionContainer() {
         <>
           <MinutesResult result={result} />
           <button className="submit-btn" style={{ marginTop: '1rem' }} onClick={reset}>
-            Process Another Recording
+            Procesar otra grabación
           </button>
         </>
       )}
@@ -35,7 +35,7 @@ export default function TranscriptionContainer() {
         <>
           <ErrorBanner message={error} />
           <button className="submit-btn" onClick={reset}>
-            Try Again
+            Reintentar
           </button>
         </>
       )}

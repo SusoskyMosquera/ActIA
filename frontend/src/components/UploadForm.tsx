@@ -28,64 +28,69 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
 
   return (
     <form className="upload-form" onSubmit={handleSubmit}>
-      <h2>Upload Audio Recording</h2>
+      <h2>Subir grabación de audio</h2>
 
       <div className="form-group">
-        <label htmlFor="audio-file">Audio File</label>
-        <input
-          id="audio-file"
-          type="file"
-          accept="audio/*"
-          disabled={isBusy}
-          onChange={(e) => setFile(e.target.files?.[0] ?? null)}
-          required
-        />
+        <label htmlFor="audio-file">Archivo de audio</label>
+        <div className={`file-input${isBusy ? ' is-disabled' : ''}`}>
+          <label htmlFor="audio-file" className="file-button">Elegir archivo</label>
+          <span className="file-name">
+            {file ? file.name : 'Ningún archivo seleccionado'}
+          </span>
+          <input
+            id="audio-file"
+            className="visually-hidden"
+            type="file"
+            accept="audio/*"
+            disabled={isBusy}
+            onChange={(e) => setFile(e.target.files?.[0] ?? null)}
+          />
+        </div>
       </div>
 
       <div className="form-row">
         <div className="form-group">
-          <label htmlFor="language">Language</label>
+          <label htmlFor="language">Idioma</label>
           <select
             id="language"
             value={language}
             onChange={(e) => setLanguage(e.target.value)}
             disabled={isBusy}
           >
-            <option value="es">Spanish</option>
-            <option value="en">English</option>
-            <option value="auto">Auto-detect</option>
+            <option value="es">Español</option>
+            <option value="en">Inglés</option>
+            <option value="auto">Detección automática</option>
           </select>
         </div>
 
         <div className="form-group">
-          <label htmlFor="model-size">Model Size</label>
+          <label htmlFor="model-size">Tamaño del modelo</label>
           <select
             id="model-size"
             value={modelSize}
             onChange={(e) => setModelSize(e.target.value)}
             disabled={isBusy}
           >
-            <option value="tiny">Tiny (fastest)</option>
+            <option value="tiny">Tiny (más rápido)</option>
             <option value="base">Base</option>
-            <option value="small">Small (recommended)</option>
+            <option value="small">Small (recomendado)</option>
             <option value="medium">Medium</option>
-            <option value="large">Large (best accuracy)</option>
+            <option value="large">Large (mejor precisión)</option>
           </select>
         </div>
       </div>
 
       <div className="form-group">
-        <label htmlFor="num-speakers">Number of Speakers (optional)</label>
+        <label htmlFor="num-speakers">Número de oradores (opcional)</label>
         <input
           id="num-speakers"
           type="number"
           min="1"
           max="20"
-          placeholder="Auto-detect"
+          placeholder="Automático"
           value={numSpeakers}
           onChange={(e) => setNumSpeakers(e.target.value)}
           disabled={isBusy}
-          style={{ width: '100%', padding: '0.5rem 0.75rem', border: '1px solid #d1d5db', borderRadius: '6px', fontSize: '0.875rem' }}
         />
       </div>
 
@@ -94,7 +99,7 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
         className="submit-btn"
         disabled={isBusy || !file}
       >
-        {isBusy ? 'Processing...' : 'Generate Minutes'}
+        {isBusy ? 'Procesando...' : 'Generar acta'}
       </button>
     </form>
   )

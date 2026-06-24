@@ -24,36 +24,36 @@ export default function MinutesResult({ result }: MinutesResultProps) {
   return (
     <div className="minutes-result">
       <div className="result-section">
-        <h2>Metadata</h2>
+        <h2>Detalles</h2>
         <div className="metadata-grid">
           <div className="metadata-item">
-            <div className="meta-label">Duration</div>
+            <div className="meta-label">Duración</div>
             <div className="meta-value">{formatDuration(metadata.duration_sec)}</div>
           </div>
           <div className="metadata-item">
-            <div className="meta-label">Language</div>
+            <div className="meta-label">Idioma</div>
             <div className="meta-value">{metadata.language.toUpperCase()}</div>
           </div>
           <div className="metadata-item">
-            <div className="meta-label">Speakers</div>
+            <div className="meta-label">Oradores</div>
             <div className="meta-value">{metadata.num_speakers}</div>
           </div>
           <div className="metadata-item">
-            <div className="meta-label">Model</div>
+            <div className="meta-label">Modelo</div>
             <div className="meta-value">{metadata.model}</div>
           </div>
         </div>
       </div>
 
       <div className="result-section">
-        <h2>Meeting Minutes</h2>
+        <h2>Acta de la reunión</h2>
         <div className="markdown-content">
           <ReactMarkdown>{minutes}</ReactMarkdown>
         </div>
       </div>
 
       <div className="result-section">
-        <h2>Transcript</h2>
+        <h2>Transcripción</h2>
         <ul className="transcript-list">
           {transcript.map((segment, index) => (
             <li key={index} className="transcript-item">

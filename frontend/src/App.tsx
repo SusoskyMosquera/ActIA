@@ -5,7 +5,7 @@ function App() {
     <main className="app">
       <header className="app-header">
         <h1>ActIA</h1>
-        <p>Meeting Minutes Generator</p>
+        <p>Generador de Actas de Reunión</p>
       </header>
       <TranscriptionContainer />
     </main>
