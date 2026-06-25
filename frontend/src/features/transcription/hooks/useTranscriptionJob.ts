@@ -1,5 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { cancelTranscription, createTranscription, getTranscription } from '../api/transcriptionClient'
+import { getAudioDurationMs } from '../../../lib/audioDuration'
+import { unlockAudio, playDone, playError } from '../../../lib/notificationSound'
 import type {
   AppState,
   JobResult,
@@ -7,6 +9,10 @@ import type {
   ProcessingStage,
   TranscriptionOptions,
 } from '../types'
+
+// Rough CPU heuristic: diarization runs ~3x realtime + model load overhead
+const CPU_FACTOR = 3.5
+const BASE_OVERHEAD_MS = 10000
 
 const POLL_INTERVAL_MS = 2000
 // On CPU, real transcription + diarization can take tens of minutes. The backend
@@ -24,6 +30,8 @@ interface UseTranscriptionJobReturn {
   stage: ProcessingStage
   result: JobResult | null
   error: string | null
+  startedAt: number | null
+  estimatedTotalMs: number | null
   submit: (file: File, opts: TranscriptionOptions) => Promise<void>
   reset: () => void
   cancel: () => Promise<void>
@@ -35,6 +43,8 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
   const [stage, setStage] = useState<ProcessingStage>(null)
   const [result, setResult] = useState<JobResult | null>(null)
   const [error, setError] = useState<string | null>(null)
+  const [startedAt, setStartedAt] = useState<number | null>(null)
+  const [estimatedTotalMs, setEstimatedTotalMs] = useState<number | null>(null)
 
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
   const pollStartRef = useRef<number>(0)
@@ -54,10 +64,12 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
         stopPolling()
         setResult(response.result)
         setState('done')
+        playDone()
       } else if (response.status === 'ERROR') {
         stopPolling()
         setError(response.error ?? 'Unknown error')
         setState('error')
+        playError()
       } else if (response.status === 'CANCELLED') {
         // Server confirmed cancellation — return to idle so the user can start a new job.
         stopPolling()
@@ -94,6 +106,15 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
 
   const submit = useCallback(
     async (file: File, opts: TranscriptionOptions) => {
+      // Runs from a user gesture — unlock audio for autoplay policy
+      unlockAudio()
+      setStartedAt(Date.now())
+      setEstimatedTotalMs(null)
+      // Kick off duration read in parallel; update estimate when ready
+      void getAudioDurationMs(file).then((ms) => {
+        if (ms !== null) setEstimatedTotalMs(ms * CPU_FACTOR + BASE_OVERHEAD_MS)
+      })
+
       setState('submitting')
       setError(null)
       setResult(null)
@@ -120,6 +141,8 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
     setStage(null)
     setResult(null)
     setError(null)
+    setStartedAt(null)
+    setEstimatedTotalMs(null)
   }, [stopPolling])
 
   const cancel = useCallback(async () => {
@@ -132,6 +155,8 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
     setStage(null)
     setResult(null)
     setError(null)
+    setStartedAt(null)
+    setEstimatedTotalMs(null)
     // Best-effort server-side cancellation — ignore errors (job may have already finished).
     if (id) {
       try {
@@ -149,5 +174,5 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
     }
   }, [stopPolling])
 
-  return { state, jobId, stage, result, error, submit, reset, cancel }
+  return { state, jobId, stage, result, error, startedAt, estimatedTotalMs, submit, reset, cancel }
 }
