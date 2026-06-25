@@ -1,6 +1,7 @@
 from __future__ import annotations
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
 from app.domain.models import JobStatus
+from app.infrastructure.analysis.local_audio_analyzer import LocalAudioAnalyzer
 from app.infrastructure.diarization.demo_diarizer import DemoDiarizer
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
 from app.infrastructure.nlp.demo_minutes_generator import DemoMinutesGenerator
@@ -10,9 +11,12 @@ from app.infrastructure.transcription.demo_transcriber import DemoTranscriber
 def test_demo_pipeline_produces_done_job_with_attributed_acta() -> None:
     """End-to-end: real use case + demo adapters yields a DONE job with an acta."""
     store = InMemoryJobStore()
-    use_case = GenerateMeetingMinutes(
+    analyzer = LocalAudioAnalyzer(
         transcriber=DemoTranscriber(delay_seconds=0.0),
         diarizer=DemoDiarizer(delay_seconds=0.0),
+    )
+    use_case = GenerateMeetingMinutes(
+        analyzer=analyzer,
         generator=DemoMinutesGenerator(delay_seconds=0.0),
         store=store,
     )

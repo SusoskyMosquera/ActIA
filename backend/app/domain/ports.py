@@ -21,6 +21,18 @@ class SpeakerDiarizer(Protocol):
         ...
 
 
+class AudioAnalyzer(Protocol):
+    """Higher-level port: returns attributed segments directly.
+
+    Implementations can combine transcription + diarization locally (LocalAudioAnalyzer)
+    or delegate both to a hosted service that returns speaker-attributed output in one call
+    (AssemblyAIAudioAnalyzer).
+    """
+
+    def analyze(self, audio_path: str) -> list[AttributedSegment]:
+        ...
+
+
 class MinutesGenerator(Protocol):
     def generate(self, transcript: list[AttributedSegment]) -> Minutes:
         ...

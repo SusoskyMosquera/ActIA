@@ -1,29 +1,25 @@
 from __future__ import annotations
 import pytest
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
-from app.domain.models import JobStatus, SpeakerTurn, TranscriptSegment
+from app.domain.models import JobStatus
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
 from tests.fakes.adapters import (
-    FakeDiarizer,
+    FakeAnalyzer,
     FakeMinutesGenerator,
-    FakeTranscriber,
-    FailingDiarizer,
+    FailingAnalyzer,
     FailingMinutesGenerator,
-    FailingTranscriber,
 )
 
 
 def make_use_case(
-    transcriber=None,
-    diarizer=None,
+    analyzer=None,
     generator=None,
     store=None,
 ) -> tuple[GenerateMeetingMinutes, InMemoryJobStore]:
     if store is None:
         store = InMemoryJobStore()
     use_case = GenerateMeetingMinutes(
-        transcriber=transcriber or FakeTranscriber(),
-        diarizer=diarizer or FakeDiarizer(),
+        analyzer=analyzer or FakeAnalyzer(),
         generator=generator or FakeMinutesGenerator(),
         store=store,
     )
@@ -31,7 +27,7 @@ def make_use_case(
 
 
 def test_happy_path_stages_progress_correctly() -> None:
-    """Stages should go TRANSCRIBING -> DIARIZING -> GENERATING_MINUTES -> DONE."""
+    """Stages should progress through ANALYZING -> GENERATING_MINUTES -> DONE."""
     use_case, store = make_use_case()
     job = store.create()
 
@@ -59,9 +55,9 @@ def test_happy_path_result_is_correct() -> None:
     assert final.result.metadata.duration_sec == 10.0
 
 
-def test_failing_transcriber_marks_error() -> None:
-    """A transcription failure should mark the job ERROR with the exception message."""
-    use_case, store = make_use_case(transcriber=FailingTranscriber())
+def test_failing_analyzer_marks_error() -> None:
+    """An analysis failure should mark the job ERROR with the exception message."""
+    use_case, store = make_use_case(analyzer=FailingAnalyzer())
     job = store.create()
 
     use_case.execute(job.id, "fake/path.wav")
@@ -69,20 +65,7 @@ def test_failing_transcriber_marks_error() -> None:
     final = store.get(job.id)
     assert final is not None
     assert final.status == JobStatus.ERROR
-    assert "Simulated transcription failure" in (final.error or "")
-
-
-def test_failing_diarizer_marks_error() -> None:
-    """A diarization failure should mark the job ERROR."""
-    use_case, store = make_use_case(diarizer=FailingDiarizer())
-    job = store.create()
-
-    use_case.execute(job.id, "fake/path.wav")
-
-    final = store.get(job.id)
-    assert final is not None
-    assert final.status == JobStatus.ERROR
-    assert "Simulated diarization failure" in (final.error or "")
+    assert "Simulated analysis failure" in (final.error or "")
 
 
 def test_failing_generator_marks_error() -> None:
@@ -105,11 +88,11 @@ def test_failing_generator_marks_error() -> None:
 def test_cancel_before_execute_short_circuits_pipeline() -> None:
     """Requesting cancel before execute should leave the job CANCELLED.
 
-    FailingDiarizer is used so that if the pipeline runs past TRANSCRIBING the
-    test would fail with an error rather than CANCELLED — proving that
-    cancellation truly short-circuits execution.
+    FailingAnalyzer is used so that if the pipeline runs past the first cancel
+    checkpoint the test would fail with an error rather than CANCELLED — proving
+    that cancellation truly short-circuits execution before the analyzer is reached.
     """
-    use_case, store = make_use_case(diarizer=FailingDiarizer())
+    use_case, store = make_use_case(analyzer=FailingAnalyzer())
     job = store.create()
 
     store.request_cancel(job.id)
@@ -147,33 +130,3 @@ def test_non_cancelled_run_still_reaches_done() -> None:
     assert final is not None
     assert final.status == JobStatus.DONE
     assert final.result is not None
-
-
-def test_transcription_and_diarization_run_in_parallel() -> None:
-    """The two independent stages should run concurrently, not sequentially."""
-    import time
-
-    class _SlowTranscriber:
-        def transcribe(self, audio_path: str) -> list[TranscriptSegment]:
-            time.sleep(0.5)
-            return [TranscriptSegment(start=0.0, end=1.0, text="hi")]
-
-    class _SlowDiarizer:
-        def diarize(self, audio_path: str) -> list[SpeakerTurn]:
-            time.sleep(0.5)
-            return [SpeakerTurn(start=0.0, end=1.0, speaker="SPEAKER_00")]
-
-    use_case, store = make_use_case(
-        transcriber=_SlowTranscriber(), diarizer=_SlowDiarizer()
-    )
-    job = store.create()
-
-    start = time.perf_counter()
-    use_case.execute(job.id, "fake/path.wav")
-    elapsed = time.perf_counter() - start
-
-    final = store.get(job.id)
-    assert final is not None
-    assert final.status == JobStatus.DONE
-    # Parallel ~0.5s; sequential would be ~1.0s. Generous upper bound.
-    assert elapsed < 0.85

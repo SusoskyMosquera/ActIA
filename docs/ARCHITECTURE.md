@@ -11,6 +11,7 @@
 | 2 | Audio pipeline behind ports (hexagonal); deployment frozen, swap-ready | [ADR-0002](./adr/0002-decoupled-audio-pipeline.md) |
 | 3 | `faster-whisper` for transcription; pyannote.audio for diarization | [ADR-0003](./adr/0003-transcription-engine.md) |
 | 4 | Minutes provider selectable — Gemini default, Ollama (OSS/local) option | [ADR-0004](./adr/0004-minutes-provider.md) |
+| 5 | Analysis behind an `AudioAnalyzer` port; AssemblyAI option for long meetings | [ADR-0005](./adr/0005-analysis-provider.md) |
 
 ## Processing pipeline
 

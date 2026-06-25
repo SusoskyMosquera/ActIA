@@ -2,6 +2,23 @@ from __future__ import annotations
 from app.domain.models import AttributedSegment, Minutes, SpeakerTurn, TranscriptSegment
 
 
+class FakeAnalyzer:
+    """Returns canned attributed segments (two speakers, 10 s total)."""
+
+    def analyze(self, audio_path: str) -> list[AttributedSegment]:
+        return [
+            AttributedSegment(start=0.0, end=5.0, text="Hello world", speaker="SPEAKER_00"),
+            AttributedSegment(start=5.0, end=10.0, text="How are you", speaker="SPEAKER_01"),
+        ]
+
+
+class FailingAnalyzer:
+    """Always raises RuntimeError to simulate an analysis failure."""
+
+    def analyze(self, audio_path: str) -> list[AttributedSegment]:
+        raise RuntimeError("Simulated analysis failure")
+
+
 class FakeTranscriber:
     """Returns canned transcript segments."""
 

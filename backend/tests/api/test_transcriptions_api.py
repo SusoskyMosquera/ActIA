@@ -7,7 +7,7 @@ from app.main import create_app
 from app.api.dependencies import get_job_store, get_use_case
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
-from tests.fakes.adapters import FakeDiarizer, FakeMinutesGenerator, FakeTranscriber
+from tests.fakes.adapters import FakeAnalyzer, FakeMinutesGenerator
 
 
 def make_test_client() -> tuple[TestClient, InMemoryJobStore]:
@@ -15,8 +15,7 @@ def make_test_client() -> tuple[TestClient, InMemoryJobStore]:
     store = InMemoryJobStore()
 
     fake_use_case = GenerateMeetingMinutes(
-        transcriber=FakeTranscriber(),
-        diarizer=FakeDiarizer(),
+        analyzer=FakeAnalyzer(),
         generator=FakeMinutesGenerator(),
         store=store,
     )

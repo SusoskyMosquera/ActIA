@@ -71,12 +71,14 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 |----------|---------|---------|
 | `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + LLM) |
 | `DEMO_DELAY_SECONDS` | `1.5` | Per-stage delay in demo mode so the UI shows progress |
-| `MODEL_SIZE` | `small` | faster-whisper model size (real mode) |
+| `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote on-machine) or `assemblyai` (hosted, good for long meetings) |
+| `ASSEMBLYAI_API_KEY` | — | Required when `ANALYSIS_PROVIDER=assemblyai` (free key at assemblyai.com) |
+| `MODEL_SIZE` | `small` | faster-whisper model size (real local mode) |
 | `LANGUAGE` | `es` | Transcription language (`es`, `en`, … or `auto`) |
 | `DEVICE` | `cpu` | `cpu` or `cuda` for whisper + pyannote |
 | `COMPUTE_TYPE` | `int8` | faster-whisper compute type (`int8` CPU, `float16` GPU) |
-| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-community-1` | pyannote 4.x pipeline (real mode) |
-| `HUGGINGFACE_TOKEN` | — | Required for pyannote in real mode (see below) |
+| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-community-1` | pyannote 4.x pipeline (real local mode) |
+| `HUGGINGFACE_TOKEN` | — | Required for pyannote in real local mode (see below) |
 | `MINUTES_PROVIDER` | `gemini` | `gemini` (hosted) or `ollama` (local, OSS, private) |
 | `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model id (`gemini-2.5-flash` recommended) |
 | `GEMINI_API_KEY` | — | Required when `MINUTES_PROVIDER=gemini` |
@@ -103,6 +105,28 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
      set `MINUTES_PROVIDER=ollama`, install [Ollama](https://ollama.com/download),
      and run `ollama pull qwen2.5:3b`.
 4. Set `ADAPTER_MODE=real` and restart the backend.
+
+### Long meetings (hours) — AssemblyAI provider
+
+For recordings of several hours, the local models can be slow (diarization runs
+~3× slower than realtime on CPU). As an alternative, set `ANALYSIS_PROVIDER=assemblyai`:
+transcription and diarization happen server-side in one API call, with no local
+GPU or HF token required.
+
+```bash
+pip install -e ".[dev,nlp,hosted]"
+```
+
+Then in `backend/.env`:
+
+```
+ADAPTER_MODE=real
+ANALYSIS_PROVIDER=assemblyai
+ASSEMBLYAI_API_KEY=<your key>   # free key at https://www.assemblyai.com
+```
+
+With `ANALYSIS_PROVIDER=assemblyai`, the local faster-whisper and pyannote models
+are not loaded at all — only the AssemblyAI SDK is used.
 
 > Note: the real models need real RAM/CPU (ideally a GPU) and will not run on
 > free deployment tiers. On CPU, diarization runs ~3× slower than realtime, so a

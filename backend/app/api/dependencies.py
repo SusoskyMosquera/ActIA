@@ -3,7 +3,9 @@ from functools import lru_cache
 
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
 from app.config import get_settings
-from app.domain.ports import AudioTranscriber, MinutesGenerator, SpeakerDiarizer
+from app.domain.ports import AudioAnalyzer, AudioTranscriber, MinutesGenerator, SpeakerDiarizer
+from app.infrastructure.analysis.assemblyai_analyzer import AssemblyAIAudioAnalyzer
+from app.infrastructure.analysis.local_audio_analyzer import LocalAudioAnalyzer
 from app.infrastructure.diarization.demo_diarizer import DemoDiarizer
 from app.infrastructure.diarization.pyannote_diarizer import PyannoteDiarizer
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
@@ -69,16 +71,33 @@ def get_minutes_generator() -> MinutesGenerator:
 
 
 @lru_cache(maxsize=1)
+def get_analyzer() -> AudioAnalyzer:
+    settings = get_settings()
+    if settings.adapter_mode == "demo":
+        # Demo mode: wrap demo transcriber/diarizer in the local analyzer (no real models).
+        return LocalAudioAnalyzer(get_transcriber(), get_diarizer())
+    if settings.analysis_provider == "assemblyai":
+        # AssemblyAI path: transcription + diarization happen server-side; do NOT
+        # construct the local transcriber/diarizer (avoids loading torch/whisper).
+        return AssemblyAIAudioAnalyzer(
+            api_key=settings.assemblyai_api_key,
+            language=settings.language,
+        )
+    # Default local path: faster-whisper + pyannote run in parallel.
+    return LocalAudioAnalyzer(get_transcriber(), get_diarizer())
+
+
+@lru_cache(maxsize=1)
 def get_use_case() -> GenerateMeetingMinutes:
     settings = get_settings()
-    model_name = (
-        f"faster-whisper:{settings.model_size}"
-        if settings.adapter_mode == "real"
-        else "demo"
-    )
+    if settings.adapter_mode == "real" and settings.analysis_provider == "assemblyai":
+        model_name = "assemblyai"
+    elif settings.adapter_mode == "real":
+        model_name = f"faster-whisper:{settings.model_size}"
+    else:
+        model_name = "demo"
     return GenerateMeetingMinutes(
-        transcriber=get_transcriber(),
-        diarizer=get_diarizer(),
+        analyzer=get_analyzer(),
         generator=get_minutes_generator(),
         store=get_job_store(),
         language=settings.language,

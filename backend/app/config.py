@@ -24,6 +24,12 @@ class Settings(BaseSettings):
     diarization_model: str = "pyannote/speaker-diarization-community-1"
     huggingface_token: str = ""
 
+    # Analysis provider — selectable ("local" uses faster-whisper + pyannote in parallel;
+    # "assemblyai" delegates transcription + diarization to AssemblyAI in one hosted call,
+    # which is better suited for long recordings of several hours).
+    analysis_provider: str = "local"  # "local" | "assemblyai"
+    assemblyai_api_key: str = ""
+
     # Minutes generation — selectable provider
     minutes_provider: str = "gemini"  # "gemini" | "ollama"
     gemini_model: str = "gemini-1.5-flash"

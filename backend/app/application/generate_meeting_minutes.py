@@ -1,30 +1,30 @@
 from __future__ import annotations
-from concurrent.futures import ThreadPoolExecutor
 
 from app.domain.models import (
-    AttributedSegment,
     JobStage,
     TranscriptionMetadata,
     TranscriptionResult,
 )
-from app.domain.ports import AudioTranscriber, JobStore, MinutesGenerator, SpeakerDiarizer
-from app.domain.services.speaker_attribution import attribute_speakers
+from app.domain.ports import AudioAnalyzer, JobStore, MinutesGenerator
 
 
 class GenerateMeetingMinutes:
-    """Use case: orchestrate transcription, diarization, speaker attribution, and minutes generation."""
+    """Use case: orchestrate analysis (transcription + diarization) and minutes generation.
+
+    The heavy audio analysis is delegated to the AudioAnalyzer port, which may be
+    a LocalAudioAnalyzer (faster-whisper + pyannote running in parallel) or a
+    hosted analyzer such as AssemblyAIAudioAnalyzer.
+    """
 
     def __init__(
         self,
-        transcriber: AudioTranscriber,
-        diarizer: SpeakerDiarizer,
+        analyzer: AudioAnalyzer,
         generator: MinutesGenerator,
         store: JobStore,
         language: str = "es",
         model_name: str = "faster-whisper:small",
     ) -> None:
-        self._transcriber = transcriber
-        self._diarizer = diarizer
+        self._analyzer = analyzer
         self._generator = generator
         self._store = store
         self._language = language
@@ -44,28 +44,20 @@ class GenerateMeetingMinutes:
     def execute(self, job_id: str, audio_path: str) -> None:
         """Run the full pipeline. Catches all exceptions and marks the job ERROR.
 
-        Transcription and diarization are independent (both only read the audio),
-        so they run in parallel under a single ANALYZING stage. Cancellation
-        checkpoints sit at the stage boundaries; if a cancel is requested the job
-        is marked CANCELLED and the method returns without running further stages.
+        The analyzer encapsulates how transcription and diarization happen (locally
+        in parallel, or via a hosted service). Cancellation checkpoints sit at the
+        stage boundaries; if a cancel is requested the job is marked CANCELLED and
+        the method returns without running further stages.
         """
         try:
             if self._check_cancelled(job_id):
                 return
 
-            # faster-whisper (CTranslate2) and pyannote (torch) release the GIL
-            # during inference, so running both in threads gives real parallelism:
-            # wall time ~= max(transcribe, diarize) instead of their sum.
             self._store.set_stage(job_id, JobStage.ANALYZING)
-            with ThreadPoolExecutor(max_workers=2) as pool:
-                segments_future = pool.submit(self._transcriber.transcribe, audio_path)
-                turns_future = pool.submit(self._diarizer.diarize, audio_path)
-                segments = segments_future.result()
-                turns = turns_future.result()
+            attributed = self._analyzer.analyze(audio_path)
 
             if self._check_cancelled(job_id):
                 return
-            attributed: list[AttributedSegment] = attribute_speakers(segments, turns)
 
             self._store.set_stage(job_id, JobStage.GENERATING_MINUTES)
             minutes = self._generator.generate(attributed)
@@ -73,8 +65,8 @@ class GenerateMeetingMinutes:
             if self._check_cancelled(job_id):
                 return
 
-            duration_sec = max((seg.end for seg in segments), default=0.0)
-            num_speakers = len({t.speaker for t in turns})
+            duration_sec = max((seg.end for seg in attributed), default=0.0)
+            num_speakers = len({seg.speaker for seg in attributed})
             metadata = TranscriptionMetadata(
                 duration_sec=duration_sec,
                 language=self._language,

@@ -30,6 +30,9 @@ nlp = [
     "google-genai",
     "ollama",
 ]
+hosted = [
+    "assemblyai",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
