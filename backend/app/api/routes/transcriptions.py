@@ -51,7 +51,7 @@ def copy_file_with_limit(src, dst, max_size: int, buffer_size: int = 8192) -> in
 
 
 @router.post("/", status_code=202, response_model=JobCreatedResponse)
-@limiter.limit("1/minute")
+@limiter.limit("5/minute")
 async def create_transcription(
     request: Request,
     background_tasks: BackgroundTasks,
