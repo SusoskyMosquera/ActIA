@@ -32,6 +32,27 @@ By default the backend runs with **demo adapters** that return canned data — s
 you can run the whole app end-to-end **without** installing the heavy ML stack
 or any API keys. Switch to real processing by setting `ADAPTER_MODE=real`.
 
+## Run with Docker (one command)
+
+The whole app — the backend API and the frontend served by nginx — runs with a
+single command:
+
+```bash
+docker compose up --build
+```
+
+Then open **http://localhost:8080** (the backend API is on
+`http://localhost:8000`, docs at `/docs`). nginx proxies `/api` to the backend
+automatically.
+
+- **Demo mode** works out of the box — no keys required.
+- For **real/hosted** processing, create `backend/.env` (copy from
+  `backend/.env.example`), set `ADAPTER_MODE=real` and your provider keys — it is
+  loaded automatically on `up`.
+- The image ships the light providers (Gemini / Ollama / AssemblyAI /
+  Speechmatics). To also include the heavy local stack (faster-whisper +
+  pyannote): `docker compose build --build-arg INSTALL_EXTRAS="nlp,hosted,ml"`.
+
 ## Prerequisites
 
 - Python 3.11+
@@ -185,6 +206,8 @@ ActIA/
 - [x] Backend skeleton (hexagonal) with tests
 - [x] Frontend skeleton (container/presentational + hooks) with tests
 - [x] Demo adapters — full pipeline runs end-to-end
-- [x] Real adapters implemented (faster-whisper / pyannote / Gemini + Ollama) — pending first run with real models/keys
+- [x] Real local adapters (faster-whisper / pyannote / Gemini + Ollama) — validated on real Spanish audio
+- [x] Hosted analyzers for long meetings — AssemblyAI + Speechmatics behind the `AudioAnalyzer` port
+- [x] One-command run via Docker Compose (backend API + nginx frontend)
 - [ ] File type/size validation (`400`/`413`) and periodic job cleanup
-- [ ] Deployment (frozen pending stakeholder approval)
+- [ ] Managed cloud hosting (frozen pending stakeholder approval)

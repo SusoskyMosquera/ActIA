@@ -1,8 +1,13 @@
 # ADR-0002: Decoupled audio pipeline behind ports (hexagonal) and deployment scope
 
-**Status:** Accepted
+**Status:** Accepted (deployment scope clarified by [ADR-0006](./0006-containerized-deployment.md))
 **Date:** 2026-06-24
 **Deciders:** Project stakeholders
+
+> **Amendment (ADR-0006):** "Deployment frozen" here means committing to a
+> *managed cloud host*. It does **not** preclude packaging the app for a
+> reproducible local/self-hosted run — that is now provided by the Docker Compose
+> stack in [ADR-0006](./0006-containerized-deployment.md).
 
 ## Context
 
@@ -36,8 +41,9 @@ concrete **adapters** in the infrastructure layer:
 The application layer (use case `GenerateMeetingMinutes`) depends only on the
 ports, never on concrete SDKs. Wiring happens via FastAPI dependency injection.
 
-Deployment stays **frozen**. The port boundary makes a later swap (local model →
-hosted API) a change of one adapter, at zero cost to the domain.
+Managed cloud hosting stays **frozen** (see the amendment above). The port
+boundary makes a later swap (local model → hosted API) a change of one adapter,
+at zero cost to the domain.
 
 ## Options Considered
 
