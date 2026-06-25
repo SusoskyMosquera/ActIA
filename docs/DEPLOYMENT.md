@@ -1,73 +1,73 @@
-# Guía de Despliegue - ActIA
+# Deployment Guide - ActIA
 
-Este documento detalla la arquitectura de despliegue en producción para la aplicación **ActIA**, especificando dónde está corriendo cada servicio, cómo están configurados y cómo solucionar los problemas de integración más comunes (CORS, URLs, etc.).
+This document details the production deployment architecture for the **ActIA** application, specifying where each service runs, how they are configured, and how to resolve common integration issues (CORS, URLs, etc.).
 
 ---
 
-## 🏗️ Arquitectura de Despliegue (Híbrida)
+## 🏗️ Deployment Architecture (Hybrid)
 
-Para asegurar la estabilidad, escalabilidad y compatibilidad de la aplicación con entornos serverless y persistentes, se optó por un modelo de **despliegue híbrido**:
+To ensure stability, scalability, and compatibility of the application with serverless and persistent runtimes, a **hybrid deployment model** was chosen:
 
 ```
 ┌────────────────────────────────┐       ┌─────────────────────────────────┐
 │     FRONTEND (React + Vite)    │ ────> │        BACKEND (FastAPI)        │
-│    Desplegado en: VERCEL       │       │      Desplegado en: RENDER      │
+│     Deployed to: VERCEL        │       │      Deployed to: RENDER        │
 │  https://act-ia.vercel.app     │       │    https://actia.onrender.com   │
 └────────────────────────────────┘       └─────────────────────────────────┘
 ```
 
-1. **Frontend (Vercel):** Se sirve como una aplicación de página única (SPA) estática optimizada y distribuida a nivel global.
-2. **Backend (Render):** Se ejecuta en un contenedor persistente de Docker para dar soporte al almacenamiento de trabajos en memoria (`InMemoryJobStore`) y permitir la ejecución de hilos asíncronos en segundo plano sin congelamientos del runtime.
+1. **Frontend (Vercel):** Served as a static Single Page Application (SPA), globally optimized and distributed at the edge.
+2. **Backend (Render):** Runs on a persistent Docker container to support the in-memory job store (`InMemoryJobStore`) and allow background asynchronous threads to complete without runtime freezing.
 
 ---
 
-## 🔗 Enlaces y Direcciones de Producción
+## 🔗 Production Links & Endpoints
 
-* **Aplicación Web (Frontend):** [https://act-ia.vercel.app/](https://act-ia.vercel.app/)
-* **API de Producción (Backend):** [https://actia.onrender.com/](https://actia.onrender.com/)
-* **Ruta Base de la API (Vite):** `https://actia.onrender.com/api/v1`
-* **Prueba de Liveness (Healthcheck):** [https://actia.onrender.com/api/v1/health](https://actia.onrender.com/api/v1/health)
+* **Web Application (Frontend):** [https://act-ia.vercel.app/](https://act-ia.vercel.app/)
+* **Production API (Backend):** [https://actia.onrender.com/](https://actia.onrender.com/)
+* **API Base URL (Vite):** `https://actia.onrender.com/api/v1`
+* **Liveness Probe (Healthcheck):** [https://actia.onrender.com/api/v1/health](https://actia.onrender.com/api/v1/health)
 
 ---
 
-## ⚙️ Configuración y Variables de Entorno
+## ⚙️ Configuration & Environment Variables
 
 ### 1. Frontend (Vercel)
-En la configuración del proyecto en el dashboard de Vercel, se deben establecer los siguientes parámetros:
+In the Vercel project settings dashboard, configure the following parameters:
 
-* **Directorio Raíz:** `frontend`
+* **Root Directory:** `frontend`
 * **Framework Preset:** `Vite`
-* **Comando de Build:** `npm run build`
-* **Directorio de Output:** `dist`
-* **Variables de Entorno:**
-  * `VITE_API_BASE_URL`: `https://actia.onrender.com/api/v1` *(⚠️ IMPORTANTE: Sin barra diagonal `/` al final)*
+* **Build Command:** `npm run build`
+* **Output Directory:** `dist`
+* **Environment Variables:**
+  * `VITE_API_BASE_URL`: `https://actia.onrender.com/api/v1` *(⚠️ IMPORTANT: Do not include a trailing slash `/`)*
 
 ### 2. Backend (Render)
-En la sección **Environment** del servicio web en el panel de control de Render, se deben configurar las siguientes variables:
+In the **Environment** tab of the web service in the Render control panel, configure the following variables:
 
-* **Directorio Raíz:** `backend`
-* **Runtime:** `Docker` (Render detecta automáticamente el [Dockerfile](file:///c:/Users/SOPORTES%20JPVM/Documents/Personal%20Proyects/ActIA/backend/Dockerfile))
-* **Variables de Entorno:**
-  * `CORS_ORIGINS`: `http://localhost:5173,https://act-ia.vercel.app` *(⚠️ Permite peticiones tanto del entorno de desarrollo local como del frontend en producción, separadas por coma y sin barra `/` al final)*
+* **Root Directory:** `backend`
+* **Runtime:** `Docker` (Render automatically detects the [Dockerfile](file:///c:/Users/SOPORTES%20JPVM/Documents/Personal%20Proyects/ActIA/backend/Dockerfile))
+* **Environment Variables:**
+  * `CORS_ORIGINS`: `http://localhost:5173,https://act-ia.vercel.app` *(⚠️ Allows requests from both the local development server and the production frontend. Must be comma-separated without spaces and without a trailing slash `/`)*
   * `ADAPTER_MODE`: `real`
-  * `ANALYSIS_PROVIDER`: `assemblyai` *(o `speechmatics`, recomendado para hosting gratuito/CPU sin GPU)*
-  * `ASSEMBLYAI_API_KEY`: *(Tu API key de AssemblyAI)*
-  * `GEMINI_API_KEY`: *(Tu API key de Google AI Studio)*
+  * `ANALYSIS_PROVIDER`: `assemblyai` *(or `speechmatics`, recommended for free tiers/CPUs without GPUs to avoid resource exhaustion)*
+  * `ASSEMBLYAI_API_KEY`: *(Your AssemblyAI API key)*
+  * `GEMINI_API_KEY`: *(Your Google AI Studio API key)*
 
 ---
 
-## 🚨 Gotchas y Resolución de Problemas Frecuentes
+## 🚨 Gotchas & Troubleshooting
 
-### 1. Error de CORS (`CORS Missing Allow Origin`)
-Si el navegador arroja errores de CORS al intentar realizar una transcripción, verifica lo siguiente:
-* **Falta del origen en `CORS_ORIGINS`:** Asegúrate de que el origen exacto desde el que haces la petición esté listado en la variable `CORS_ORIGINS` del backend. Si estás probando la web de producción, debe incluir `https://act-ia.vercel.app`. Si pruebas en local, debe incluir `http://localhost:5173`.
-* **Barra diagonal al final (`/`):** El navegador envía la cabecera `Origin` sin barra diagonal (ej. `https://act-ia.vercel.app`). Si configuraste la variable con la barra al final (`https://act-ia.vercel.app/`), el backend la rechazará por no coincidir exactamente.
-* **Redespliegue pendiente:** Cualquier cambio en las variables de entorno de Render requiere guardar los cambios y verificar que se complete un redespliegue manual o automático exitoso para que FastAPI actualice su estado.
+### 1. CORS Error (`CORS Missing Allow Origin`)
+If the browser throws CORS errors when attempting to run a transcription job, verify:
+* **Missing origin in `CORS_ORIGINS`:** Make sure the exact origin from which you are making the request is listed in the backend's `CORS_ORIGINS` variable. The production frontend needs `https://act-ia.vercel.app`. Testing locally requires `http://localhost:5173`.
+* **Trailing slash (`/`):** The browser sends the `Origin` header without a trailing slash (e.g., `https://act-ia.vercel.app`). If you configured the variable with a trailing slash (`https://act-ia.vercel.app/`), the backend will reject the request due to a mismatch.
+* **Pending redeploy:** Any changes to the environment variables on Render require you to save them and verify that a manual or automatic redeployment completes successfully so that FastAPI updates its loaded settings.
 
-### 2. Doble barra diagonal en llamadas a la API
-Si configuras `VITE_API_BASE_URL` con una barra final (ej. `https://actia.onrender.com/api/v1/`), las peticiones se resolverán como `.../api/v1//transcriptions/`. 
-FastAPI responderá con un redireccionamiento automático (`307` o `308`) para normalizar la URL. Durante esta redirección, el navegador perderá las cabeceras CORS de origen y la petición fallará. **Mantén siempre la URL sin `/` final**.
+### 2. Double Slashes in API Requests
+If you configure `VITE_API_BASE_URL` with a trailing slash (e.g., `https://actia.onrender.com/api/v1/`), requests resolve as `.../api/v1//transcriptions/`.
+FastAPI responds with an automatic redirect (`307` or `308`) to clean up the double slash. During this redirect, the browser drops the CORS headers, leading to a CORS failure. **Always keep this URL without a trailing `/`**.
 
-### 3. Arranque en frío (Cold Start) en Render
-Si utilizas el plan gratuito de Render, el contenedor se apagará tras 15 minutos de inactividad. La primera petición que despierte el backend puede tardar hasta 50 segundos en responder. Durante este tiempo, es probable que la petición del frontend falle o expire con un error que el navegador interpretará como un problema de CORS (ya que el balanceador de carga de Render devuelve respuestas de error HTTP 502/504 sin cabeceras CORS).
-* *Recomendación:* Visita directamente `https://actia.onrender.com/api/v1/health` en el navegador para despertar el servicio antes de usar la aplicación frontend.
+### 3. Cold Start on Render (Free Tier)
+If you are using Render's free tier, the container spins down after 15 minutes of inactivity. The first request that wakes up the backend can take up to 50 seconds to respond. During this boot phase, the request may timeout, and the Render load balancer returns a `502 Bad Gateway` or `504 Gateway Timeout` response without CORS headers. The browser will report this as a CORS error.
+* *Recommendation:* Visit `https://actia.onrender.com/api/v1/health` directly in your browser to wake up the service before using the web app.
