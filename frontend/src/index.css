@@ -214,6 +214,25 @@ body {
   cursor: not-allowed;
 }
 
+.cancel-btn {
+  width: 100%;
+  padding: 0.5rem 1.25rem;
+  background-color: transparent;
+  color: var(--danger-text);
+  border: 1px solid var(--danger-border);
+  border-radius: 6px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  margin-top: 0.75rem;
+  transition: background-color 0.2s, border-color 0.2s;
+}
+
+.cancel-btn:hover {
+  background-color: var(--danger-bg);
+  border-color: var(--danger-text);
+}
+
 /* Processing status */
 .spinner {
   width: 2.5rem;

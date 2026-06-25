@@ -6,7 +6,7 @@ import { useTranscriptionJob } from './hooks/useTranscriptionJob'
 import type { TranscriptionOptions } from './types'
 
 export default function TranscriptionContainer() {
-  const { state, stage, result, error, submit, reset } = useTranscriptionJob()
+  const { state, stage, result, error, submit, reset, cancel } = useTranscriptionJob()
 
   const isBusy = state === 'submitting' || state === 'processing'
 
@@ -19,7 +19,12 @@ export default function TranscriptionContainer() {
       <UploadForm onSubmit={handleSubmit} isBusy={isBusy} />
 
       {(state === 'submitting' || state === 'processing') && (
-        <ProcessingStatus stage={stage} status={state} />
+        <>
+          <ProcessingStatus stage={stage} status={state} />
+          <button className="cancel-btn" onClick={() => void cancel()}>
+            Cancelar
+          </button>
+        </>
       )}
 
       {state === 'done' && result !== null && (

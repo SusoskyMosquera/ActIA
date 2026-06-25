@@ -50,6 +50,7 @@ class JobStatus(str, Enum):
     PROCESSING = "PROCESSING"
     DONE = "DONE"
     ERROR = "ERROR"
+    CANCELLED = "CANCELLED"
 
 
 class JobStage(str, Enum):

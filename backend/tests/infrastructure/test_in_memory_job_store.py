@@ -108,3 +108,91 @@ def test_cleanup_does_not_remove_pending_processing_jobs() -> None:
 
     assert removed == 0
     assert store.get(job.id) is not None
+
+
+# ---------------------------------------------------------------------------
+# Cancellation
+# ---------------------------------------------------------------------------
+
+def test_request_cancel_returns_true_for_pending_job() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+
+    result = store.request_cancel(job.id)
+
+    assert result is True
+    assert store.is_cancelled(job.id) is True
+
+
+def test_request_cancel_returns_true_for_processing_job() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+    store.set_stage(job.id, JobStage.TRANSCRIBING)
+
+    result = store.request_cancel(job.id)
+
+    assert result is True
+    assert store.is_cancelled(job.id) is True
+
+
+def test_request_cancel_returns_false_for_unknown_id() -> None:
+    store = InMemoryJobStore()
+
+    result = store.request_cancel("nonexistent-id")
+
+    assert result is False
+
+
+def test_request_cancel_returns_false_for_done_job() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+    store.mark_done(job.id, make_result())
+
+    result = store.request_cancel(job.id)
+
+    assert result is False
+    assert store.is_cancelled(job.id) is False
+
+
+def test_request_cancel_returns_false_for_error_job() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+    store.mark_error(job.id, "something went wrong")
+
+    result = store.request_cancel(job.id)
+
+    assert result is False
+    assert store.is_cancelled(job.id) is False
+
+
+def test_is_cancelled_returns_false_before_request() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+
+    assert store.is_cancelled(job.id) is False
+
+
+def test_mark_cancelled_sets_status_to_cancelled() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+    store.request_cancel(job.id)
+    store.mark_cancelled(job.id)
+
+    updated = store.get(job.id)
+    assert updated is not None
+    assert updated.status == JobStatus.CANCELLED
+    assert updated.stage is None
+
+
+def test_cleanup_expired_removes_cancelled_jobs() -> None:
+    store = InMemoryJobStore()
+    job = store.create()
+    store.request_cancel(job.id)
+    store.mark_cancelled(job.id)
+
+    store._created_at[job.id] = time.time() - 7200
+
+    removed = store.cleanup_expired(ttl_seconds=3600)
+
+    assert removed == 1
+    assert store.get(job.id) is None

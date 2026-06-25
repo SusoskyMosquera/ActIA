@@ -28,19 +28,44 @@ class GenerateMeetingMinutes:
         self._language = language
         self._model_name = model_name
 
+    def _check_cancelled(self, job_id: str) -> bool:
+        """Return True and mark the job CANCELLED if cancellation was requested.
+
+        Must NOT raise — it is called inside the try/except that marks ERROR,
+        and we do not want a cancellation to be mis-classified as an error.
+        """
+        if self._store.is_cancelled(job_id):
+            self._store.mark_cancelled(job_id)
+            return True
+        return False
+
     def execute(self, job_id: str, audio_path: str) -> None:
-        """Run the full pipeline. Catches all exceptions and marks the job ERROR."""
+        """Run the full pipeline. Catches all exceptions and marks the job ERROR.
+
+        Cancellation checkpoints are inserted before each stage. If a cancel is
+        requested the job is marked CANCELLED and the method returns early without
+        running the remaining stages.
+        """
         try:
+            if self._check_cancelled(job_id):
+                return
             self._store.set_stage(job_id, JobStage.TRANSCRIBING)
             segments = self._transcriber.transcribe(audio_path)
 
+            if self._check_cancelled(job_id):
+                return
             self._store.set_stage(job_id, JobStage.DIARIZING)
             turns = self._diarizer.diarize(audio_path)
 
+            if self._check_cancelled(job_id):
+                return
             attributed: list[AttributedSegment] = attribute_speakers(segments, turns)
 
             self._store.set_stage(job_id, JobStage.GENERATING_MINUTES)
             minutes = self._generator.generate(attributed)
+
+            if self._check_cancelled(job_id):
+                return
 
             duration_sec = max((seg.end for seg in segments), default=0.0)
             num_speakers = len({t.speaker for t in turns})

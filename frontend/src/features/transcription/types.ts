@@ -1,4 +1,4 @@
-export type JobStatus = 'PENDING' | 'PROCESSING' | 'DONE' | 'ERROR'
+export type JobStatus = 'PENDING' | 'PROCESSING' | 'DONE' | 'ERROR' | 'CANCELLED'
 
 export type ProcessingStage =
   | 'TRANSCRIBING'

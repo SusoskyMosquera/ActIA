@@ -7,6 +7,7 @@ from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, Up
 from app.api.dependencies import get_job_store, get_use_case
 from app.api.schemas import (
     AttributedSegmentResponse,
+    CancelResponse,
     JobCreatedResponse,
     JobStatusResponse,
     TranscriptionMetadataResponse,
@@ -83,3 +84,22 @@ async def get_transcription(
         result=result_response,
         error=job.error,
     )
+
+
+@router.post("/{job_id}/cancel", response_model=CancelResponse)
+async def cancel_transcription(
+    job_id: str,
+    store: InMemoryJobStore = Depends(get_job_store),
+) -> CancelResponse:
+    """Request cancellation of an active transcription job.
+
+    Returns 404 if the job does not exist.
+    Returns 409 if the job is already in a terminal state (DONE, ERROR, or CANCELLED).
+    """
+    job = store.get(job_id)
+    if job is None:
+        raise HTTPException(status_code=404, detail="Job not found")
+    if not store.request_cancel(job_id):
+        raise HTTPException(status_code=409, detail="Job is not cancellable (already finished)")
+    updated = store.get(job_id)
+    return CancelResponse(job_id=job_id, status=updated.status.value if updated else job.status.value)

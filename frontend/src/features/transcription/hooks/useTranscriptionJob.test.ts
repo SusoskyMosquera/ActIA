@@ -7,6 +7,7 @@ vi.mock('../api/transcriptionClient')
 
 const mockCreateTranscription = vi.mocked(client.createTranscription)
 const mockGetTranscription = vi.mocked(client.getTranscription)
+const mockCancelTranscription = vi.mocked(client.cancelTranscription)
 
 describe('useTranscriptionJob', () => {
   beforeEach(() => {
@@ -316,5 +317,127 @@ describe('useTranscriptionJob', () => {
 
     expect(result.current.state).toBe('error')
     expect(result.current.error).toBe('Network error')
+  })
+
+  describe('cancel()', () => {
+    it('returns state to idle immediately (optimistic) and calls cancelTranscription', async () => {
+      mockCreateTranscription.mockResolvedValueOnce({ jobId: 'job-cancel-1', status: 'PENDING' })
+      mockGetTranscription.mockResolvedValue({
+        job_id: 'job-cancel-1',
+        status: 'PROCESSING',
+        stage: 'TRANSCRIBING',
+        result: null,
+        error: null,
+      })
+      mockCancelTranscription.mockResolvedValue(undefined)
+
+      const { result } = renderHook(() => useTranscriptionJob())
+      const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
+
+      // Submit → processing
+      await act(async () => {
+        void result.current.submit(file, { language: 'es', modelSize: 'small' })
+      })
+      await act(async () => { await vi.runAllTicks() })
+
+      expect(result.current.state).toBe('processing')
+      expect(result.current.jobId).toBe('job-cancel-1')
+
+      // Cancel
+      await act(async () => {
+        await result.current.cancel()
+      })
+
+      // Optimistic reset: back to idle immediately
+      expect(result.current.state).toBe('idle')
+      expect(result.current.jobId).toBeNull()
+      expect(result.current.result).toBeNull()
+      expect(result.current.error).toBeNull()
+
+      // Client called with the original job id
+      expect(mockCancelTranscription).toHaveBeenCalledWith('job-cancel-1')
+    })
+
+    it('stops polling when cancel is called', async () => {
+      mockCreateTranscription.mockResolvedValueOnce({ jobId: 'job-cancel-2', status: 'PENDING' })
+      mockGetTranscription.mockResolvedValue({
+        job_id: 'job-cancel-2',
+        status: 'PROCESSING',
+        stage: 'TRANSCRIBING',
+        result: null,
+        error: null,
+      })
+      mockCancelTranscription.mockResolvedValue(undefined)
+
+      const { result } = renderHook(() => useTranscriptionJob())
+      const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
+
+      await act(async () => {
+        void result.current.submit(file, { language: 'es', modelSize: 'small' })
+      })
+      await act(async () => { await vi.runAllTicks() })
+
+      // Cancel — should stop polling
+      await act(async () => {
+        await result.current.cancel()
+      })
+
+      const callCountAfterCancel = mockGetTranscription.mock.calls.length
+
+      // Advance time — no more poll calls expected
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(6000)
+      })
+
+      expect(mockGetTranscription.mock.calls.length).toBe(callCountAfterCancel)
+    })
+
+    it('does not throw when cancel is called before a job exists (idle state)', async () => {
+      mockCancelTranscription.mockResolvedValue(undefined)
+
+      const { result } = renderHook(() => useTranscriptionJob())
+
+      // Should not throw even though jobId is null
+      await act(async () => {
+        await result.current.cancel()
+      })
+
+      expect(result.current.state).toBe('idle')
+      expect(mockCancelTranscription).not.toHaveBeenCalled()
+    })
+
+    it('handles CANCELLED status from a poll response by returning to idle', async () => {
+      mockCreateTranscription.mockResolvedValueOnce({ jobId: 'job-cancel-3', status: 'PENDING' })
+      mockGetTranscription.mockResolvedValueOnce({
+        job_id: 'job-cancel-3',
+        status: 'CANCELLED',
+        stage: null,
+        result: null,
+        error: null,
+      })
+
+      const { result } = renderHook(() => useTranscriptionJob())
+      const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
+
+      await act(async () => {
+        void result.current.submit(file, { language: 'es', modelSize: 'small' })
+      })
+      await act(async () => { await vi.runAllTicks() })
+
+      // First poll returns CANCELLED
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(2000)
+      })
+
+      expect(result.current.state).toBe('idle')
+      expect(result.current.jobId).toBeNull()
+
+      // No further polling after CANCELLED
+      const callCountAfterCancelled = mockGetTranscription.mock.calls.length
+      await act(async () => {
+        await vi.advanceTimersByTimeAsync(6000)
+      })
+      expect(mockGetTranscription.mock.calls.length).toBe(callCountAfterCancelled)
+    })
   })
 })

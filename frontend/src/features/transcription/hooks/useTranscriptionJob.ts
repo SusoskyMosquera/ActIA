@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { createTranscription, getTranscription } from '../api/transcriptionClient'
+import { cancelTranscription, createTranscription, getTranscription } from '../api/transcriptionClient'
 import type {
   AppState,
   JobResult,
@@ -26,6 +26,7 @@ interface UseTranscriptionJobReturn {
   error: string | null
   submit: (file: File, opts: TranscriptionOptions) => Promise<void>
   reset: () => void
+  cancel: () => Promise<void>
 }
 
 export function useTranscriptionJob(): UseTranscriptionJobReturn {
@@ -57,6 +58,14 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
         stopPolling()
         setError(response.error ?? 'Unknown error')
         setState('error')
+      } else if (response.status === 'CANCELLED') {
+        // Server confirmed cancellation — return to idle so the user can start a new job.
+        stopPolling()
+        setStage(null)
+        setState('idle')
+        setJobId(null)
+        setResult(null)
+        setError(null)
       } else if (Date.now() - pollStartRef.current > MAX_POLL_DURATION_MS) {
         stopPolling()
         setError('Job timed out. Please try again.')
@@ -113,6 +122,26 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
     setError(null)
   }, [stopPolling])
 
+  const cancel = useCallback(async () => {
+    // Capture the job id before reset clears it.
+    const id = jobId
+    // Optimistic: return to idle immediately so the user can start a new job.
+    stopPolling()
+    setState('idle')
+    setJobId(null)
+    setStage(null)
+    setResult(null)
+    setError(null)
+    // Best-effort server-side cancellation — ignore errors (job may have already finished).
+    if (id) {
+      try {
+        await cancelTranscription(id)
+      } catch {
+        // intentionally swallowed — the optimistic reset already happened
+      }
+    }
+  }, [jobId, stopPolling])
+
   // Cleanup on unmount
   useEffect(() => {
     return () => {
@@ -120,5 +149,5 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
     }
   }, [stopPolling])
 
-  return { state, jobId, stage, result, error, submit, reset }
+  return { state, jobId, stage, result, error, submit, reset, cancel }
 }

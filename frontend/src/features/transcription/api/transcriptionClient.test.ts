@@ -130,6 +130,36 @@ describe('transcriptionClient', () => {
     })
   })
 
+  describe('cancelTranscription', () => {
+    it('POSTs to /transcriptions/{id}/cancel', async () => {
+      const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ job_id: 'abc123', status: 'PENDING' }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+
+      await import('./transcriptionClient').then(m => m.cancelTranscription('abc123'))
+
+      expect(fetchSpy).toHaveBeenCalledOnce()
+      const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
+      expect(url).toBe('/api/v1/transcriptions/abc123/cancel')
+      expect(init.method).toBe('POST')
+    })
+
+    it('throws ApiError on non-2xx response', async () => {
+      vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
+        new Response(JSON.stringify({ detail: 'Job is not cancellable (already finished)' }), {
+          status: 409,
+          headers: { 'Content-Type': 'application/json' },
+        }),
+      )
+
+      const { cancelTranscription, ApiError } = await import('./transcriptionClient')
+      await expect(cancelTranscription('abc123')).rejects.toThrow(ApiError)
+    })
+  })
+
   describe('getTranscription', () => {
     it('GETs the correct URL for a job ID', async () => {
       const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(

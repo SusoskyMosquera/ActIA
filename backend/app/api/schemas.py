@@ -35,5 +35,10 @@ class JobStatusResponse(BaseModel):
     error: str | None
 
 
+class CancelResponse(BaseModel):
+    job_id: str
+    status: str
+
+
 class HealthResponse(BaseModel):
     status: str

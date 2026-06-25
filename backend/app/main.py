@@ -19,7 +19,7 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # Warm the singletons so models load ONCE at startup (ADR-0001), not on the
     # first request. TODO: this becomes real model initialization once the
     # stub adapters are replaced.
-    logger.info("Loading models (stub — replace with real adapter init)")
+    logger.info("Loading models (stub — replace with real  init)")
     get_use_case()
     yield
     shutdown_worker()

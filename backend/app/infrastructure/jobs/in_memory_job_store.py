@@ -13,6 +13,7 @@ class InMemoryJobStore:
         self._jobs: dict[str, Job] = {}
         self._created_at: dict[str, float] = {}
         self._lock = threading.Lock()
+        self._cancel_requested: set[str] = set()
 
     def create(self) -> Job:
         job = Job(id=str(uuid4()), status=JobStatus.PENDING)
@@ -54,13 +55,41 @@ class InMemoryJobStore:
             job.status = JobStatus.ERROR
             job.error = message
 
+    def request_cancel(self, job_id: str) -> bool:
+        """Flag a job for cancellation. Returns True if the flag was set, False otherwise.
+
+        Returns False when the job does not exist or is already in a terminal state
+        (DONE, ERROR, or CANCELLED).
+        """
+        with self._lock:
+            job = self._jobs.get(job_id)
+            if job is None:
+                return False
+            if job.status not in (JobStatus.PENDING, JobStatus.PROCESSING):
+                return False
+            self._cancel_requested.add(job_id)
+            return True
+
+    def is_cancelled(self, job_id: str) -> bool:
+        """Return True if a cancellation has been requested for this job."""
+        with self._lock:
+            return job_id in self._cancel_requested
+
+    def mark_cancelled(self, job_id: str) -> None:
+        """Mark a job as CANCELLED and clear its stage (mirrors mark_error)."""
+        with self._lock:
+            job = self._jobs[job_id]
+            job.status = JobStatus.CANCELLED
+            job.stage = None
+
     def cleanup_expired(self, ttl_seconds: float) -> int:
-        """Remove DONE or ERROR jobs older than ttl_seconds. Returns count removed."""
+        """Remove terminal jobs (DONE, ERROR, CANCELLED) older than ttl_seconds. Returns count removed."""
         now = time.time()
         to_remove: list[str] = []
+        _terminal = (JobStatus.DONE, JobStatus.ERROR, JobStatus.CANCELLED)
         with self._lock:
             for job_id, job in self._jobs.items():
-                if job.status not in (JobStatus.DONE, JobStatus.ERROR):
+                if job.status not in _terminal:
                     continue
                 age = now - self._created_at.get(job_id, now)
                 if age >= ttl_seconds:
@@ -68,4 +97,5 @@ class InMemoryJobStore:
             for job_id in to_remove:
                 del self._jobs[job_id]
                 self._created_at.pop(job_id, None)
+                self._cancel_requested.discard(job_id)
         return len(to_remove)

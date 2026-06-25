@@ -66,3 +66,10 @@ export async function getTranscription(
   await assertOk(response)
   return response.json() as Promise<JobStatusResponse>
 }
+
+export async function cancelTranscription(jobId: string): Promise<void> {
+  const response = await fetch(`${getBaseUrl()}/transcriptions/${jobId}/cancel`, {
+    method: 'POST',
+  })
+  await assertOk(response)
+}

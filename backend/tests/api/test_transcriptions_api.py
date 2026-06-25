@@ -70,3 +70,43 @@ def test_get_transcription_after_post_returns_200() -> None:
     body = get_response.json()
     assert body["job_id"] == job_id
     assert "status" in body
+
+
+def test_cancel_active_job_returns_200_with_job_id() -> None:
+    """POST /{job_id}/cancel on an active (PENDING) job should return 200 with the job_id."""
+    client, store = make_test_client()
+    job = store.create()
+
+    response = client.post(f"/api/v1/transcriptions/{job.id}/cancel")
+
+    assert response.status_code == 200
+    body = response.json()
+    assert body["job_id"] == job.id
+    assert "status" in body
+
+
+def test_cancel_unknown_job_returns_404() -> None:
+    """POST /{job_id}/cancel on a non-existent job should return 404."""
+    client, _ = make_test_client()
+
+    response = client.post("/api/v1/transcriptions/nonexistent-id/cancel")
+
+    assert response.status_code == 404
+
+
+def test_cancel_finished_job_returns_409() -> None:
+    """POST /{job_id}/cancel on a DONE job should return 409 (not cancellable)."""
+    from app.domain.models import AttributedSegment, TranscriptionMetadata, TranscriptionResult
+
+    client, store = make_test_client()
+    job = store.create()
+    result = TranscriptionResult(
+        transcript=[AttributedSegment(start=0.0, end=5.0, text="hello", speaker="SPEAKER_00")],
+        minutes="# Minutes",
+        metadata=TranscriptionMetadata(duration_sec=5.0, language="es", num_speakers=1, model="test"),
+    )
+    store.mark_done(job.id, result)
+
+    response = client.post(f"/api/v1/transcriptions/{job.id}/cancel")
+
+    assert response.status_code == 409
