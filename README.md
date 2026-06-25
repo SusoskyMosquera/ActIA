@@ -1,222 +1,134 @@
 # ActIA
 
-Lightweight, open-source web app that turns a meeting recording into **meeting
-minutes (acta)**: it transcribes the audio, separates who said what (speaker
-diarization), and generates a structured summary.
+A lightweight, open-source web application that turns meeting recordings into structured minutes (**actas**). It transcribes the audio, performs speaker diarization, and generates a structured summary.
 
-Stateless by design — no accounts, no database, no persistence. Upload an audio
-file, get the result on the same screen.
+Stateless by design—no user accounts, no database, no persistence. Upload an audio file and get the results directly on the screen.
 
-## How it works
+## Pipeline Workflow
 
 ```
 upload audio → transcribe → diarize → attribute speakers → generate minutes → acta
 ```
 
-- **Backend:** FastAPI, hexagonal architecture. Async job model — upload returns
-  a `job_id`, the client polls for the result. Heavy work runs off the event
-  loop on a single worker.
-- **Frontend:** React + TypeScript. Container/presentational split — all logic
-  lives in the `useTranscriptionJob` hook; components only render.
-- **Analysis:** speaker-attributed segments produced by a selectable
-  `AudioAnalyzer` adapter — `local` (`faster-whisper` + `pyannote.audio` in
-  parallel, on-machine), `assemblyai` (hosted, one-time credit), or
-  `speechmatics` (hosted, recurring free tier, auto speaker detection). Only
-  the chosen adapter is loaded; the domain is untouched.
-- **Minutes:** structured summary via a selectable `MinutesGenerator` adapter —
-  **Gemini** (default, hosted) or **Ollama** (fully local, open-source,
-  nothing leaves your machine).
-- **Export:** download the full acta (metadata + minutes + transcript) as
-  Markdown, Word (.docx), or copy to clipboard — all done in the browser
-  (stateless design). The Word generator is code-split to keep the main
-  bundle light.
+- **Backend:** FastAPI implementing a clean hexagonal architecture. Async jobs are managed in-memory with client polling.
+- **Frontend:** React + TypeScript using a container/presentational split. All logic is encapsulated in the `useTranscriptionJob` hook.
+- **Audio Analysis:** The `AudioAnalyzer` adapter supports local processing (`faster-whisper` + `pyannote.audio` in parallel) or hosted APIs (`assemblyai` / `speechmatics`).
+- **Minutes Generation:** The `MinutesGenerator` adapter supports `gemini` (hosted) or `ollama` (fully local and private).
+- **Export:** Browser-side generation of Markdown, Word (.docx) files, or copy to clipboard.
 
-Architecture decisions are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
-and the ADRs under [`docs/adr/`](docs/adr).
+Detailed architecture decisions are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the ADRs under [docs/adr/](docs/adr).
 
-## Demo mode (runs out of the box)
+## Running the App
 
-By default the backend runs with **demo adapters** that return canned data — so
-you can run the whole app end-to-end **without** installing the heavy ML stack
-or any API keys. Switch to real processing by setting `ADAPTER_MODE=real`.
-
-## Run with Docker (one command)
-
-The whole app — the backend API and the frontend served by nginx — runs with a
-single command:
+### 1. Docker Compose (Quickest Setup)
+Run the entire application (FastAPI backend + Nginx frontend) with a single command:
 
 ```bash
 docker compose up --build
 ```
 
-Then open **http://localhost:8080** (the backend API is on
-`http://localhost:8000`, docs at `/docs`). nginx proxies `/api` to the backend
-automatically.
+Access the app at **http://localhost:8080** (API docs at `http://localhost:8000/docs`).
 
-- **Demo mode** works out of the box — no keys required.
-- For **real/hosted** processing, create `backend/.env` (copy from
-  `backend/.env.example`), set `ADAPTER_MODE=real` and your provider keys — it is
-  loaded automatically on `up`.
-- The image ships the light providers (Gemini / Ollama / AssemblyAI /
-  Speechmatics). To also include the heavy local stack (faster-whisper +
-  pyannote): `docker compose build --build-arg INSTALL_EXTRAS="nlp,hosted,ml"`.
+By default, the app runs in **demo mode** (uses canned mock data so you do not need ML dependencies or API keys). To run real processing, see [Real Processing Setup](#real-processing-setup).
 
-## Prerequisites
+### 2. Manual Development Setup
 
+#### Prerequisites
 - Python 3.11+
 - Node.js 18+
 
-## Quick start
-
-### 1. Backend
-
+#### Backend Setup
 ```bash
 cd backend
 python -m venv .venv
-# Windows: .venv\Scripts\activate   |   macOS/Linux: source .venv/bin/activate
+# Windows: .venv\Scripts\activate | macOS/Linux: source .venv/bin/activate
 pip install -e ".[dev]"
 uvicorn app.main:app --reload --port 8000
 ```
+The API is available at `http://localhost:8000` (docs at `http://localhost:8000/docs`).
 
-The API is now on `http://localhost:8000` (docs at `/docs`). Demo mode is the
-default — no extra setup needed.
-
-### 2. Frontend
-
+#### Frontend Setup
 ```bash
 cd frontend
 npm install
 npm run dev
 ```
-
-Open `http://localhost:5173`. The dev server proxies `/api` to the backend.
-Upload any audio file and watch the pipeline run to a rendered acta.
+Open `http://localhost:5173`. The dev server automatically proxies `/api` to the backend.
 
 ## Configuration
 
-Copy `backend/.env.example` to `backend/.env` and adjust as needed.
+Copy `backend/.env.example` to `backend/.env` and adjust the variables.
 
-| Variable | Default | Purpose |
-|----------|---------|---------|
-| `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + LLM) |
-| `DEMO_DELAY_SECONDS` | `1.5` | Per-stage delay in demo mode so the UI shows progress |
-| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed CORS origins for production deployment |
-| `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote on-machine), `assemblyai` (hosted, good for long meetings), or `speechmatics` (hosted, auto speaker detection, ~480 min/month free tier) |
-| `ASSEMBLYAI_API_KEY` | — | Required when `ANALYSIS_PROVIDER=assemblyai` (free key at assemblyai.com) |
-| `SPEECHMATICS_API_KEY` | — | Required when `ANALYSIS_PROVIDER=speechmatics` (key at speechmatics.com) |
-| `MODEL_SIZE` | `small` | faster-whisper model size (real local mode) |
-| `LANGUAGE` | `es` | Transcription language (`es`, `en`, … or `auto`) |
-| `DEVICE` | `cpu` | `cpu` or `cuda` for whisper + pyannote |
-| `COMPUTE_TYPE` | `int8` | faster-whisper compute type (`int8` CPU, `float16` GPU) |
-| `DIARIZATION_MODEL` | `pyannote/speaker-diarization-community-1` | pyannote 4.x pipeline (real local mode) |
-| `HUGGINGFACE_TOKEN` | — | Required for pyannote in real local mode (see below) |
-| `MINUTES_PROVIDER` | `gemini` | `gemini` (hosted) or `ollama` (local, OSS, private) |
-| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model id (`gemini-2.5-flash` recommended) |
-| `GEMINI_API_KEY` | — | Required when `MINUTES_PROVIDER=gemini` |
-| `OLLAMA_BASE_URL` | `http://localhost:11434` | Local Ollama server (`MINUTES_PROVIDER=ollama`) |
-| `OLLAMA_MODEL` | `qwen2.5:3b` | Local model id (`MINUTES_PROVIDER=ollama`) |
-| `JOB_TTL_SECONDS` | `3600` | In-memory job retention before cleanup |
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADAPTER_MODE` | `demo` | `demo` (canned mock data) or `real` (actual ML + LLM processing) |
+| `DEMO_DELAY_SECONDS` | `1.5` | Delay per stage in demo mode to visualize UI progress |
+| `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote), `assemblyai`, or `speechmatics` |
+| `MINUTES_PROVIDER` | `gemini` | `gemini` or `ollama` |
+| `GEMINI_MODEL` | `gemini-1.5-flash` | Gemini model ID |
+| `GEMINI_API_KEY` | — | Google AI Studio API key |
+| `OLLAMA_BASE_URL` | `http://localhost:11434` | Local Ollama server URL |
+| `OLLAMA_MODEL` | `qwen2.5:3b` | Local model ID |
+| `HUGGINGFACE_TOKEN` | — | Required for pyannote in `local` analysis mode |
+| `ASSEMBLYAI_API_KEY` | — | Required for `assemblyai` analysis mode |
+| `SPEECHMATICS_API_KEY` | — | Required for `speechmatics` analysis mode |
+| `LANGUAGE` | `es` | Transcription language (`es`, `en`, or `auto`) |
 
-## Switching to real processing
+## Real Processing Setup
 
-1. Install the heavy extras:
-   ```bash
-   pip install -e ".[dev,ml,nlp]"
-   ```
-2. **Hugging Face / pyannote (diarization):** create a HF account, generate a read
-   token, and accept the gated terms for
-   `pyannote/speaker-diarization-community-1` (the pyannote 4.x model). Put the
-   token in `HUGGINGFACE_TOKEN`. A plain install will succeed but fail at runtime
-   without this.
-3. **Minutes provider — pick one:**
-   - **Gemini** (default, best quality, generous free tier): put your Google AI
-     Studio key in `GEMINI_API_KEY`. Caveat: on the free tier Google may use your
-     data to train its models — avoid for confidential meetings (or use Ollama).
-   - **Ollama** (fully local, open-source, private — nothing leaves your machine):
-     set `MINUTES_PROVIDER=ollama`, install [Ollama](https://ollama.com/download),
-     and run `ollama pull qwen2.5:3b`.
-4. Set `ADAPTER_MODE=real` and restart the backend.
+To transition from demo mode to real audio processing:
 
-### Long meetings (hours) — hosted providers
+1. **Install Dependencies:**
+   - For **local processing** (`faster-whisper` + `pyannote.audio`):
+     ```bash
+     pip install -e ".[dev,ml,nlp]"
+     ```
+   - For **hosted API processing** (`assemblyai` or `speechmatics`):
+     ```bash
+     pip install -e ".[dev,nlp,hosted]"
+     ```
 
-For recordings of several hours, the local models can be slow (diarization runs
-~3× slower than realtime on CPU). Two hosted alternatives are available:
+2. **Diarization Setup (Local mode only):**
+   - Create a Hugging Face account and accept terms for the model [pyannote/speaker-diarization-community-1](https://huggingface.co/pyannote/speaker-diarization-community-1).
+   - Generate a HF read token and set it in `HUGGINGFACE_TOKEN`.
 
-#### AssemblyAI
+3. **Minutes Generation Setup:**
+   - **Gemini (Hosted):** Set `GEMINI_API_KEY` with a key from Google AI Studio.
+   - **Ollama (Local):** Run `ollama pull qwen2.5:3b` and set `MINUTES_PROVIDER=ollama`.
 
-Set `ANALYSIS_PROVIDER=assemblyai`: transcription and diarization happen
-server-side in one API call, with no local GPU or HF token required.
+4. **Hosted Analyzers (Optional - for long meetings):**
+   - **AssemblyAI:** Set `ANALYSIS_PROVIDER=assemblyai` and configure `ASSEMBLYAI_API_KEY`.
+   - **Speechmatics:** Set `ANALYSIS_PROVIDER=speechmatics` and configure `SPEECHMATICS_API_KEY`.
+
+## Running Tests
 
 ```bash
-pip install -e ".[dev,nlp,hosted]"
-```
-
-Then in `backend/.env`:
-
-```
-ADAPTER_MODE=real
-ANALYSIS_PROVIDER=assemblyai
-ASSEMBLYAI_API_KEY=<your key>   # free key at https://www.assemblyai.com
-```
-
-With `ANALYSIS_PROVIDER=assemblyai`, the local faster-whisper and pyannote models
-are not loaded at all — only the AssemblyAI SDK is used.
-
-#### Speechmatics
-
-Set `ANALYSIS_PROVIDER=speechmatics`: uses the Speechmatics batch API which
-auto-detects the number of speakers (no fixed count needed) and offers a
-recurring free tier of ~480 min/month.
-
-```bash
-pip install -e ".[dev,nlp,hosted]"
-```
-
-Then in `backend/.env`:
-
-```
-ADAPTER_MODE=real
-ANALYSIS_PROVIDER=speechmatics
-SPEECHMATICS_API_KEY=<your key>   # key at https://www.speechmatics.com
-```
-
-With `ANALYSIS_PROVIDER=speechmatics`, the local faster-whisper and pyannote
-models are not loaded at all — only the Speechmatics SDK is used.
-
-> Note: the real models need real RAM/CPU (ideally a GPU) and will not run on
-> free deployment tiers. On CPU, diarization runs ~3× slower than realtime, so a
-> 10-minute recording can take 30+ minutes — use short audio or a GPU. The UI
-> poll cap is `VITE_MAX_POLL_MINUTES` (default 45). Deployment is intentionally
-> frozen — see [ADR-0002](docs/adr/0002-decoupled-audio-pipeline.md).
-
-## Running tests
-
-```bash
-# Backend
+# Backend tests
 cd backend && pytest
 
-# Frontend
-cd frontend && npm test          # vitest
-cd frontend && npx tsc --noEmit  # type-check
+# Frontend tests and type check
+cd frontend
+npm test
+npx tsc --noEmit
 ```
 
-## Project layout
+## Project Layout
 
 ```
 ActIA/
-├── backend/    FastAPI app (domain / application / infrastructure / api)
-├── frontend/   React + TS app (components + features/transcription)
-└── docs/       ARCHITECTURE.md + ADRs
+├── backend/    # FastAPI server (Domain, Application, Infrastructure, API layers)
+├── frontend/   # React + TypeScript client (Components, hooks, api)
+└── docs/       # Architecture documents and Architecture Decision Records (ADRs)
 ```
 
-## Status
+## Project Status
 
 - [x] Architecture closed (ADRs) and documented
 - [x] Backend skeleton (hexagonal) with tests
 - [x] Frontend skeleton (container/presentational + hooks) with tests
 - [x] Demo adapters — full pipeline runs end-to-end
-- [x] Real local adapters (faster-whisper / pyannote / Gemini + Ollama) — validated on real Spanish audio
-- [x] Hosted analyzers for long meetings — AssemblyAI + Speechmatics behind the `AudioAnalyzer` port
-- [x] One-command run via Docker Compose (backend API + nginx frontend)
-- [ ] File type/size validation (`400`/`413`) and periodic job cleanup
-- [ ] Managed cloud hosting (frozen pending stakeholder approval)
+- [x] Real local adapters (faster-whisper / pyannote / Gemini + Ollama)
+- [x] Hosted analyzers (AssemblyAI + Speechmatics) behind `AudioAnalyzer` port
+- [x] One-command run via Docker Compose (backend API + Nginx frontend)
+- [x] File type/size validation (`400`/`413`) and periodic job cleanup
+- [ ] Managed cloud hosting
