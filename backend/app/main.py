@@ -35,7 +35,6 @@ async def periodic_cleanup() -> None:
         await asyncio.sleep(60)
 
 
-
 @asynccontextmanager
 async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     settings = get_settings()
@@ -62,7 +61,6 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
     shutdown_worker()
     logger.info("Shutting down")
-
 
 
 def create_app() -> FastAPI:

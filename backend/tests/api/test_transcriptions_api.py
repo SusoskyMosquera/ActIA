@@ -95,14 +95,22 @@ def test_cancel_unknown_job_returns_404() -> None:
 
 def test_cancel_finished_job_returns_409() -> None:
     """POST /{job_id}/cancel on a DONE job should return 409 (not cancellable)."""
-    from app.domain.models import AttributedSegment, TranscriptionMetadata, TranscriptionResult
+    from app.domain.models import (
+        AttributedSegment,
+        TranscriptionMetadata,
+        TranscriptionResult,
+    )
 
     client, store = make_test_client()
     job = store.create()
     result = TranscriptionResult(
-        transcript=[AttributedSegment(start=0.0, end=5.0, text="hello", speaker="SPEAKER_00")],
+        transcript=[
+            AttributedSegment(start=0.0, end=5.0, text="hello", speaker="SPEAKER_00")
+        ],
         minutes="# Minutes",
-        metadata=TranscriptionMetadata(duration_sec=5.0, language="es", num_speakers=1, model="test"),
+        metadata=TranscriptionMetadata(
+            duration_sec=5.0, language="es", num_speakers=1, model="test"
+        ),
     )
     store.mark_done(job.id, result)
 
@@ -111,8 +119,11 @@ def test_cancel_finished_job_returns_409() -> None:
     assert response.status_code == 409
 
 
-def make_test_client_with_settings(settings_override) -> tuple[TestClient, InMemoryJobStore]:
+def make_test_client_with_settings(
+    settings_override,
+) -> tuple[TestClient, InMemoryJobStore]:
     from app.config import get_settings
+
     app = create_app()
     store = InMemoryJobStore()
 
@@ -131,6 +142,7 @@ def make_test_client_with_settings(settings_override) -> tuple[TestClient, InMem
 
 def test_post_transcription_payload_too_large_via_content_length() -> None:
     from app.config import Settings
+
     custom_settings = Settings(max_upload_size_bytes=10)
     client, _ = make_test_client_with_settings(custom_settings)
 
@@ -146,6 +158,7 @@ def test_post_transcription_payload_too_large_via_content_length() -> None:
 
 def test_post_transcription_payload_too_large_via_file_reading() -> None:
     from app.config import Settings
+
     custom_settings = Settings(max_upload_size_bytes=10)
     client, _ = make_test_client_with_settings(custom_settings)
 
@@ -163,7 +176,9 @@ def test_post_transcription_invalid_extension() -> None:
     audio_bytes = b"fake audio content"
     response = client.post(
         "/api/v1/transcriptions/",
-        files={"file": ("test.exe", io.BytesIO(audio_bytes), "application/x-msdownload")},
+        files={
+            "file": ("test.exe", io.BytesIO(audio_bytes), "application/x-msdownload")
+        },
     )
     assert response.status_code == 400
     assert "Unsupported file extension" in response.json()["detail"]
@@ -226,7 +241,9 @@ def test_get_render_client_ip_extracts_correct_ip() -> None:
 
     # 1. Multiple IPs in X-Forwarded-For
     request_multi = MagicMock()
-    request_multi.headers = {"X-Forwarded-For": "203.0.113.195, 70.41.3.18, 150.172.238.178"}
+    request_multi.headers = {
+        "X-Forwarded-For": "203.0.113.195, 70.41.3.18, 150.172.238.178"
+    }
     assert get_render_client_ip(request_multi) == "203.0.113.195"
 
     # 2. Single IP in X-Forwarded-For
@@ -245,5 +262,3 @@ def test_get_render_client_ip_extracts_correct_ip() -> None:
     request_none.headers = {}
     request_none.client = None
     assert get_render_client_ip(request_none) == "127.0.0.1"
-
-

@@ -7,8 +7,12 @@ class FakeAnalyzer:
 
     def analyze(self, audio_path: str) -> list[AttributedSegment]:
         return [
-            AttributedSegment(start=0.0, end=5.0, text="Hello world", speaker="SPEAKER_00"),
-            AttributedSegment(start=5.0, end=10.0, text="How are you", speaker="SPEAKER_01"),
+            AttributedSegment(
+                start=0.0, end=5.0, text="Hello world", speaker="SPEAKER_00"
+            ),
+            AttributedSegment(
+                start=5.0, end=10.0, text="How are you", speaker="SPEAKER_01"
+            ),
         ]
 
 

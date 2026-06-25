@@ -49,7 +49,9 @@ class AssemblyAIAudioAnalyzer:
         speakers_expected: int = 0,
     ) -> None:
         if not api_key.strip():
-            raise ValueError("ASSEMBLYAI_API_KEY is required for the AssemblyAI provider.")
+            raise ValueError(
+                "ASSEMBLYAI_API_KEY is required for the AssemblyAI provider."
+            )
         self._api_key = api_key
         self._language = language
         self._speakers_expected = speakers_expected

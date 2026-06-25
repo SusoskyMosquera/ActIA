@@ -62,7 +62,9 @@ def _assign_speaker(segment: TranscriptSegment, turns: list[SpeakerTurn]) -> str
     return min(candidates, key=lambda spk: earliest_start_by_speaker[spk])
 
 
-def _compute_overlap(a_start: float, a_end: float, b_start: float, b_end: float) -> float:
+def _compute_overlap(
+    a_start: float, a_end: float, b_start: float, b_end: float
+) -> float:
     overlap_start = max(a_start, b_start)
     overlap_end = min(a_end, b_end)
     return max(0.0, overlap_end - overlap_start)

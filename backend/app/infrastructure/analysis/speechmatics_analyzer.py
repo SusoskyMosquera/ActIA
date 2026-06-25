@@ -29,7 +29,7 @@ def _join_tokens(tokens: list[tuple[str, bool]]) -> str:
 def _to_attributed(results: object) -> list[AttributedSegment]:
     """Group Speechmatics word/punctuation items into per-speaker segments (pure)."""
     runs: list[dict] = []
-    for item in (results or []):
+    for item in results or []:
         itype = item.get("type")
         if itype == "speaker_change":
             continue
@@ -67,7 +67,9 @@ class SpeechmaticsAudioAnalyzer:
 
     def __init__(self, api_key: str, language: str = "es") -> None:
         if not api_key.strip():
-            raise ValueError("SPEECHMATICS_API_KEY is required for the Speechmatics provider.")
+            raise ValueError(
+                "SPEECHMATICS_API_KEY is required for the Speechmatics provider."
+            )
         self._api_key = api_key
         # Speechmatics needs a concrete language code; fall back to Spanish for "auto".
         self._language = "es" if language == "auto" else language
@@ -85,12 +87,23 @@ class SpeechmaticsAudioAnalyzer:
         actual_audio_path = audio_path
         if audio_path.lower().endswith(".webm"):
             import shutil
+
             ffmpeg_exe = shutil.which("ffmpeg") or "ffmpeg"
             temp_wav_fd, temp_wav_path = tempfile.mkstemp(suffix=".wav")
             os.close(temp_wav_fd)
             try:
                 subprocess.run(
-                    [ffmpeg_exe, "-y", "-i", audio_path, "-ar", "16000", "-ac", "1", temp_wav_path],
+                    [
+                        ffmpeg_exe,
+                        "-y",
+                        "-i",
+                        audio_path,
+                        "-ar",
+                        "16000",
+                        "-ac",
+                        "1",
+                        temp_wav_path,
+                    ],
                     capture_output=True,
                     text=True,
                     check=True,
@@ -98,32 +111,49 @@ class SpeechmaticsAudioAnalyzer:
                 )
                 actual_audio_path = temp_wav_path
                 cleanup_temp_wav = True
-                logger.info("Successfully transcoded WebM browser recording to WAV format.")
+                logger.info(
+                    "Successfully transcoded WebM browser recording to WAV format."
+                )
 
             except subprocess.TimeoutExpired as e:
                 logger.error("FFmpeg transcoding timed out after 180 seconds.")
                 raise ValueError("FFmpeg transcoding timed out.") from e
             except subprocess.CalledProcessError as e:
-                logger.error("FFmpeg transcoding failed (exit status %d):\n%s", e.returncode, e.stderr)
-                raise ValueError(f"Failed to transcode WebM audio via FFmpeg: {e.stderr.strip()}") from e
+                logger.error(
+                    "FFmpeg transcoding failed (exit status %d):\n%s",
+                    e.returncode,
+                    e.stderr,
+                )
+                raise ValueError(
+                    f"Failed to transcode WebM audio via FFmpeg: {e.stderr.strip()}"
+                ) from e
             except Exception as e:
                 logger.error("Unexpected error during FFmpeg transcoding: %s", e)
-                raise ValueError(f"Unexpected error during FFmpeg transcoding: {e}") from e
-
+                raise ValueError(
+                    f"Unexpected error during FFmpeg transcoding: {e}"
+                ) from e
 
         settings = ConnectionSettings(url=_SPEECHMATICS_URL, auth_token=self._api_key)
-        config = BatchTranscriptionConfig(language=self._language, diarization="speaker")
+        config = BatchTranscriptionConfig(
+            language=self._language, diarization="speaker"
+        )
         try:
             with BatchClient(settings) as client:
-                job_id = client.submit_job(audio=actual_audio_path, transcription_config=config)
-                transcript = client.wait_for_completion(job_id, transcription_format="json-v2")
+                job_id = client.submit_job(
+                    audio=actual_audio_path, transcription_config=config
+                )
+                transcript = client.wait_for_completion(
+                    job_id, transcription_format="json-v2"
+                )
         except httpx.HTTPStatusError as exc:
             try:
                 err_json = exc.response.json()
                 detail = err_json.get("detail") or err_json.get("error") or str(exc)
                 raise ValueError(f"Speechmatics API error: {detail}") from exc
             except Exception:
-                raise ValueError(f"Speechmatics API error: {exc.response.text or str(exc)}") from exc
+                raise ValueError(
+                    f"Speechmatics API error: {exc.response.text or str(exc)}"
+                ) from exc
         finally:
             if cleanup_temp_wav and os.path.exists(actual_audio_path):
                 try:
@@ -136,7 +166,8 @@ class SpeechmaticsAudioAnalyzer:
         speakers = {seg.speaker for seg in segments}
         logger.info(
             "Speechmatics returned %d segment(s) across %d speaker(s): %s",
-            len(segments), len(speakers), sorted(speakers),
+            len(segments),
+            len(speakers),
+            sorted(speakers),
         )
         return segments
-

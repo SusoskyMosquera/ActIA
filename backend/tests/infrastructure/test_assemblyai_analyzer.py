@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """CI-safe tests for AssemblyAI analyzer helpers (no SDK required)."""
 import pytest
 
@@ -12,6 +13,7 @@ from app.infrastructure.analysis.assemblyai_analyzer import (
 # ---------------------------------------------------------------------------
 # _speaker_label
 # ---------------------------------------------------------------------------
+
 
 def test_speaker_label_single_letters() -> None:
     assert _speaker_label("A") == "SPEAKER_00"
@@ -32,6 +34,7 @@ def test_speaker_label_non_single_letter_prefixed_verbatim() -> None:
 # ---------------------------------------------------------------------------
 # _to_attributed
 # ---------------------------------------------------------------------------
+
 
 class _FakeUtterance:
     """Minimal duck-type matching AssemblyAI's Utterance object."""
@@ -73,6 +76,7 @@ def test_to_attributed_none_returns_empty() -> None:
 # ---------------------------------------------------------------------------
 # AssemblyAIAudioAnalyzer construction
 # ---------------------------------------------------------------------------
+
 
 def test_empty_api_key_raises_value_error() -> None:
     """ValueError must be raised BEFORE any SDK import when the key is empty."""

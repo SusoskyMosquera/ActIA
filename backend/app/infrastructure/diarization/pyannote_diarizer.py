@@ -74,9 +74,7 @@ class PyannoteDiarizer:
         waveform = torch.from_numpy(data.T)  # (channels, time)
         if waveform.shape[0] > 1:
             waveform = waveform.mean(dim=0, keepdim=True)  # downmix to mono
-        output = self._pipeline(
-            {"waveform": waveform, "sample_rate": sample_rate}
-        )
+        output = self._pipeline({"waveform": waveform, "sample_rate": sample_rate})
         # pyannote 4.x returns a DiarizeOutput with a .speaker_diarization
         # Annotation; older 3.x returns the Annotation directly.
         annotation = getattr(output, "speaker_diarization", output)

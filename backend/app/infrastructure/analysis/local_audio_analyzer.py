@@ -14,7 +14,9 @@ class LocalAudioAnalyzer:
     parallelism — wall time ≈ max(transcribe, diarize) instead of their sum.
     """
 
-    def __init__(self, transcriber: AudioTranscriber, diarizer: SpeakerDiarizer) -> None:
+    def __init__(
+        self, transcriber: AudioTranscriber, diarizer: SpeakerDiarizer
+    ) -> None:
         self._transcriber = transcriber
         self._diarizer = diarizer
 

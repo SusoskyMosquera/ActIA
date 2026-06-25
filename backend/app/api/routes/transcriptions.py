@@ -2,7 +2,14 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
-from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile, Request
+from fastapi import (
+    APIRouter,
+    BackgroundTasks,
+    Depends,
+    HTTPException,
+    UploadFile,
+    Request,
+)
 
 from app.api.dependencies import get_job_store, get_use_case
 from app.api.schemas import (
@@ -37,7 +44,7 @@ def copy_file_with_limit(src, dst, max_size: int, buffer_size: int = 8192) -> in
         if total_bytes > max_size:
             raise HTTPException(
                 status_code=413,
-                detail=f"Payload too large. Maximum allowed size is {max_size} bytes."
+                detail=f"Payload too large. Maximum allowed size is {max_size} bytes.",
             )
         dst.write(chunk)
     return total_bytes
@@ -63,7 +70,7 @@ async def create_transcription(
             if content_length > settings.max_upload_size_bytes:
                 raise HTTPException(
                     status_code=413,
-                    detail=f"Payload too large. Maximum allowed size is {settings.max_upload_size_bytes} bytes."
+                    detail=f"Payload too large. Maximum allowed size is {settings.max_upload_size_bytes} bytes.",
                 )
         except ValueError:
             pass
@@ -79,7 +86,7 @@ async def create_transcription(
     if not extension or extension not in allowed_exts:
         raise HTTPException(
             status_code=400,
-            detail=f"Unsupported file extension '{extension}'. Allowed: {', '.join(sorted(allowed_exts))}"
+            detail=f"Unsupported file extension '{extension}'. Allowed: {', '.join(sorted(allowed_exts))}",
         )
 
     # 3. Create job and write file to disk with strict size limit and cleanup on failure
@@ -95,7 +102,6 @@ async def create_transcription(
         except OSError:
             pass
         raise
-
 
     background_tasks.add_task(run_job, job.id, tmp_path, use_case)
 
@@ -156,6 +162,10 @@ async def cancel_transcription(
     if job is None:
         raise HTTPException(status_code=404, detail="Job not found")
     if not store.request_cancel(job_id):
-        raise HTTPException(status_code=409, detail="Job is not cancellable (already finished)")
+        raise HTTPException(
+            status_code=409, detail="Job is not cancellable (already finished)"
+        )
     updated = store.get(job_id)
-    return CancelResponse(job_id=job_id, status=updated.status.value if updated else job.status.value)
+    return CancelResponse(
+        job_id=job_id, status=updated.status.value if updated else job.status.value
+    )

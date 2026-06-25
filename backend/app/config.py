@@ -31,7 +31,9 @@ class Settings(BaseSettings):
     # count and offers a recurring free tier of ~480 min/month).
     analysis_provider: str = "local"  # "local" | "assemblyai" | "speechmatics"
     assemblyai_api_key: str = ""
-    assemblyai_speakers_expected: int = 0  # 0 = auto; set the known count to help diarization
+    assemblyai_speakers_expected: int = (
+        0  # 0 = auto; set the known count to help diarization
+    )
     speechmatics_api_key: str = ""
 
     # Minutes generation — selectable provider
@@ -45,7 +47,6 @@ class Settings(BaseSettings):
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
     max_upload_size_bytes: int = 104857600  # 100 MB default
     allowed_audio_extensions: str = "wav,mp3,m4a,webm,ogg,mp4,flac,aac"
-
 
 
 @lru_cache

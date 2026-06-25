@@ -3,7 +3,12 @@ from functools import lru_cache
 
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
 from app.config import get_settings
-from app.domain.ports import AudioAnalyzer, AudioTranscriber, MinutesGenerator, SpeakerDiarizer
+from app.domain.ports import (
+    AudioAnalyzer,
+    AudioTranscriber,
+    MinutesGenerator,
+    SpeakerDiarizer,
+)
 from app.infrastructure.analysis.assemblyai_analyzer import AssemblyAIAudioAnalyzer
 from app.infrastructure.analysis.local_audio_analyzer import LocalAudioAnalyzer
 from app.infrastructure.analysis.speechmatics_analyzer import SpeechmaticsAudioAnalyzer
@@ -101,7 +106,9 @@ def get_use_case() -> GenerateMeetingMinutes:
     settings = get_settings()
     if settings.adapter_mode == "real" and settings.analysis_provider == "assemblyai":
         model_name = "assemblyai"
-    elif settings.adapter_mode == "real" and settings.analysis_provider == "speechmatics":
+    elif (
+        settings.adapter_mode == "real" and settings.analysis_provider == "speechmatics"
+    ):
         model_name = "speechmatics"
     elif settings.adapter_mode == "real":
         model_name = f"faster-whisper:{settings.model_size}"

@@ -114,6 +114,7 @@ def test_cleanup_does_not_remove_pending_processing_jobs() -> None:
 # Cancellation
 # ---------------------------------------------------------------------------
 
+
 def test_request_cancel_returns_true_for_pending_job() -> None:
     store = InMemoryJobStore()
     job = store.create()

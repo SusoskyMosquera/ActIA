@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 """CI-safe tests for Speechmatics analyzer helpers (no SDK required)."""
 import pytest
 
@@ -13,6 +14,7 @@ from app.infrastructure.analysis.speechmatics_analyzer import (
 # ---------------------------------------------------------------------------
 # _speaker_label
 # ---------------------------------------------------------------------------
+
 
 def test_speaker_label_s1_maps_to_speaker_00() -> None:
     assert _speaker_label("S1") == "SPEAKER_00"
@@ -39,6 +41,7 @@ def test_speaker_label_lowercase_s_treated_as_s_prefix() -> None:
 # ---------------------------------------------------------------------------
 # _join_tokens
 # ---------------------------------------------------------------------------
+
 
 def test_join_tokens_words_separated_by_spaces() -> None:
     tokens = [("Hola", False), ("mundo", False)]
@@ -71,6 +74,7 @@ def test_join_tokens_trailing_punctuation() -> None:
 # ---------------------------------------------------------------------------
 # _to_attributed
 # ---------------------------------------------------------------------------
+
 
 def _word(speaker: str, start: float, end: float, content: str) -> dict:
     return {
@@ -179,6 +183,7 @@ def test_to_attributed_items_without_alternatives_are_skipped() -> None:
 # SpeechmaticsAudioAnalyzer construction
 # ---------------------------------------------------------------------------
 
+
 def test_empty_api_key_raises_value_error() -> None:
     """ValueError must be raised BEFORE any SDK import when the key is empty."""
     with pytest.raises(ValueError, match="SPEECHMATICS_API_KEY is required"):
@@ -213,23 +218,34 @@ def test_analyze_bubbles_up_clear_speechmatics_error(monkeypatch) -> None:
     class MockClient:
         def __init__(self, *args, **kwargs):
             pass
+
         def __enter__(self):
             return self
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             pass
+
         def submit_job(self, *args, **kwargs):
             request = httpx.Request("POST", "https://asr.api.speechmatics.com/v2/jobs")
             response = httpx.Response(
                 status_code=400,
                 request=request,
-                json={"code": 400, "detail": "Languagepack 'invalid_lang' is not supported", "error": "Requested product not available"}
+                json={
+                    "code": 400,
+                    "detail": "Languagepack 'invalid_lang' is not supported",
+                    "error": "Requested product not available",
+                },
             )
-            raise httpx.HTTPStatusError("Client error '400 Bad Request'", request=request, response=response)
+            raise httpx.HTTPStatusError(
+                "Client error '400 Bad Request'", request=request, response=response
+            )
 
     monkeypatch.setattr("speechmatics.batch_client.BatchClient", MockClient)
 
     analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
-    with pytest.raises(ValueError, match="Languagepack 'invalid_lang' is not supported"):
+    with pytest.raises(
+        ValueError, match="Languagepack 'invalid_lang' is not supported"
+    ):
         analyzer.analyze("dummy_path.wav")
 
 
@@ -239,18 +255,25 @@ def test_analyze_handles_malformed_error_response(monkeypatch) -> None:
     class MockClient:
         def __init__(self, *args, **kwargs):
             pass
+
         def __enter__(self):
             return self
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             pass
+
         def submit_job(self, *args, **kwargs):
             request = httpx.Request("POST", "https://asr.api.speechmatics.com/v2/jobs")
             response = httpx.Response(
                 status_code=500,
                 request=request,
-                content=b"Internal Server Error (Plain Text)"
+                content=b"Internal Server Error (Plain Text)",
             )
-            raise httpx.HTTPStatusError("Server error '500 Internal Server Error'", request=request, response=response)
+            raise httpx.HTTPStatusError(
+                "Server error '500 Internal Server Error'",
+                request=request,
+                response=response,
+            )
 
     monkeypatch.setattr("speechmatics.batch_client.BatchClient", MockClient)
 
@@ -271,13 +294,17 @@ def test_analyze_transcodes_webm_to_wav(monkeypatch) -> None:
     class MockClient:
         def __init__(self, *args, **kwargs):
             pass
+
         def __enter__(self):
             return self
+
         def __exit__(self, exc_type, exc_val, exc_tb):
             pass
+
         def submit_job(self, audio, *args, **kwargs):
             assert audio.endswith(".wav")
             return "mock-job-id"
+
         def wait_for_completion(self, *args, **kwargs):
             return {"results": []}
 
@@ -288,7 +315,9 @@ def test_analyze_transcodes_webm_to_wav(monkeypatch) -> None:
     analyzer.analyze("test_recording.webm")
 
     assert len(called_args) == 1
-    assert called_args[0][0].lower().endswith("ffmpeg") or called_args[0][0].lower().endswith("ffmpeg.exe")
+    assert called_args[0][0].lower().endswith("ffmpeg") or called_args[0][
+        0
+    ].lower().endswith("ffmpeg.exe")
     assert called_args[0][3] == "test_recording.webm"
     assert called_args[0][8].endswith(".wav")
 
@@ -304,5 +333,3 @@ def test_analyze_webm_transcode_timeout(monkeypatch) -> None:
     analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
     with pytest.raises(ValueError, match="FFmpeg transcoding timed out."):
         analyzer.analyze("test_recording.webm")
-
-

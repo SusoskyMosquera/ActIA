@@ -85,6 +85,7 @@ def test_failing_generator_marks_error() -> None:
 # Cancellation
 # ---------------------------------------------------------------------------
 
+
 def test_cancel_before_execute_short_circuits_pipeline() -> None:
     """Requesting cancel before execute should leave the job CANCELLED.
 

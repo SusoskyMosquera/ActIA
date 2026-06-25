@@ -8,7 +8,9 @@ from app.infrastructure.nlp.gemini_minutes_generator import (
 
 def test_format_transcript_joins_speaker_lines() -> None:
     transcript = [
-        AttributedSegment(start=0.0, end=1.0, text="Hola a todos", speaker="SPEAKER_00"),
+        AttributedSegment(
+            start=0.0, end=1.0, text="Hola a todos", speaker="SPEAKER_00"
+        ),
         AttributedSegment(start=1.0, end=2.0, text="Buenos días", speaker="SPEAKER_01"),
     ]
 

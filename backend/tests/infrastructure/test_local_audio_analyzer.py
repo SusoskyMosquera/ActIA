@@ -11,6 +11,7 @@ from tests.fakes.adapters import FakeDiarizer, FakeTranscriber
 # Attribution correctness
 # ---------------------------------------------------------------------------
 
+
 def test_attribution_correctness() -> None:
     """LocalAudioAnalyzer should correctly attribute speakers to transcript segments."""
     analyzer = LocalAudioAnalyzer(FakeTranscriber(), FakeDiarizer())
@@ -28,6 +29,7 @@ def test_attribution_correctness() -> None:
 # ---------------------------------------------------------------------------
 # Parallelism timing
 # ---------------------------------------------------------------------------
+
 
 def test_parallelism_timing() -> None:
     """Transcription and diarization should run concurrently (wall < 0.85 s for two 0.5 s tasks)."""
@@ -56,6 +58,7 @@ def test_parallelism_timing() -> None:
 # ---------------------------------------------------------------------------
 # Error propagation
 # ---------------------------------------------------------------------------
+
 
 def test_failing_transcriber_propagates_exception() -> None:
     """A transcription error should propagate out of analyze."""
