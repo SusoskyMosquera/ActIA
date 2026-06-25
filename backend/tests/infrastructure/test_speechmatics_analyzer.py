@@ -205,3 +205,90 @@ def test_auto_language_falls_back_to_spanish() -> None:
 def test_explicit_language_is_preserved() -> None:
     analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="en")
     assert analyzer._language == "en"
+
+
+def test_analyze_bubbles_up_clear_speechmatics_error(monkeypatch) -> None:
+    import httpx
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+        def submit_job(self, *args, **kwargs):
+            request = httpx.Request("POST", "https://asr.api.speechmatics.com/v2/jobs")
+            response = httpx.Response(
+                status_code=400,
+                request=request,
+                json={"code": 400, "detail": "Languagepack 'invalid_lang' is not supported", "error": "Requested product not available"}
+            )
+            raise httpx.HTTPStatusError("Client error '400 Bad Request'", request=request, response=response)
+
+    monkeypatch.setattr("speechmatics.batch_client.BatchClient", MockClient)
+
+    analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
+    with pytest.raises(ValueError, match="Languagepack 'invalid_lang' is not supported"):
+        analyzer.analyze("dummy_path.wav")
+
+
+def test_analyze_handles_malformed_error_response(monkeypatch) -> None:
+    import httpx
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+        def submit_job(self, *args, **kwargs):
+            request = httpx.Request("POST", "https://asr.api.speechmatics.com/v2/jobs")
+            response = httpx.Response(
+                status_code=500,
+                request=request,
+                content=b"Internal Server Error (Plain Text)"
+            )
+            raise httpx.HTTPStatusError("Server error '500 Internal Server Error'", request=request, response=response)
+
+    monkeypatch.setattr("speechmatics.batch_client.BatchClient", MockClient)
+
+    analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
+    with pytest.raises(ValueError, match="Internal Server Error"):
+        analyzer.analyze("dummy_path.wav")
+
+
+def test_analyze_transcodes_webm_to_wav(monkeypatch) -> None:
+    import subprocess
+
+    called_args = []
+
+    def mock_run(args, **kwargs):
+        called_args.append(args)
+        return subprocess.CompletedProcess(args, 0)
+
+    class MockClient:
+        def __init__(self, *args, **kwargs):
+            pass
+        def __enter__(self):
+            return self
+        def __exit__(self, exc_type, exc_val, exc_tb):
+            pass
+        def submit_job(self, audio, *args, **kwargs):
+            assert audio.endswith(".wav")
+            return "mock-job-id"
+        def wait_for_completion(self, *args, **kwargs):
+            return {"results": []}
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+    monkeypatch.setattr("speechmatics.batch_client.BatchClient", MockClient)
+
+    analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
+    analyzer.analyze("test_recording.webm")
+
+    assert len(called_args) == 1
+    assert called_args[0][0].lower().endswith("ffmpeg") or called_args[0][0].lower().endswith("ffmpeg.exe")
+    assert called_args[0][3] == "test_recording.webm"
+    assert called_args[0][8].endswith(".wav")
+
