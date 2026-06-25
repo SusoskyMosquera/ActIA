@@ -6,6 +6,7 @@ from app.config import get_settings
 from app.domain.ports import AudioAnalyzer, AudioTranscriber, MinutesGenerator, SpeakerDiarizer
 from app.infrastructure.analysis.assemblyai_analyzer import AssemblyAIAudioAnalyzer
 from app.infrastructure.analysis.local_audio_analyzer import LocalAudioAnalyzer
+from app.infrastructure.analysis.speechmatics_analyzer import SpeechmaticsAudioAnalyzer
 from app.infrastructure.diarization.demo_diarizer import DemoDiarizer
 from app.infrastructure.diarization.pyannote_diarizer import PyannoteDiarizer
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
@@ -84,6 +85,13 @@ def get_analyzer() -> AudioAnalyzer:
             language=settings.language,
             speakers_expected=settings.assemblyai_speakers_expected,
         )
+    if settings.analysis_provider == "speechmatics":
+        # Speechmatics path: batch API handles transcription + diarization server-side;
+        # speaker count is auto-detected. Do NOT construct local transcriber/diarizer.
+        return SpeechmaticsAudioAnalyzer(
+            api_key=settings.speechmatics_api_key,
+            language=settings.language,
+        )
     # Default local path: faster-whisper + pyannote run in parallel.
     return LocalAudioAnalyzer(get_transcriber(), get_diarizer())
 
@@ -93,6 +101,8 @@ def get_use_case() -> GenerateMeetingMinutes:
     settings = get_settings()
     if settings.adapter_mode == "real" and settings.analysis_provider == "assemblyai":
         model_name = "assemblyai"
+    elif settings.adapter_mode == "real" and settings.analysis_provider == "speechmatics":
+        model_name = "speechmatics"
     elif settings.adapter_mode == "real":
         model_name = f"faster-whisper:{settings.model_size}"
     else:

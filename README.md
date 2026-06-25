@@ -71,8 +71,9 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 |----------|---------|---------|
 | `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + LLM) |
 | `DEMO_DELAY_SECONDS` | `1.5` | Per-stage delay in demo mode so the UI shows progress |
-| `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote on-machine) or `assemblyai` (hosted, good for long meetings) |
+| `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote on-machine), `assemblyai` (hosted, good for long meetings), or `speechmatics` (hosted, auto speaker detection, ~480 min/month free tier) |
 | `ASSEMBLYAI_API_KEY` | — | Required when `ANALYSIS_PROVIDER=assemblyai` (free key at assemblyai.com) |
+| `SPEECHMATICS_API_KEY` | — | Required when `ANALYSIS_PROVIDER=speechmatics` (key at speechmatics.com) |
 | `MODEL_SIZE` | `small` | faster-whisper model size (real local mode) |
 | `LANGUAGE` | `es` | Transcription language (`es`, `en`, … or `auto`) |
 | `DEVICE` | `cpu` | `cpu` or `cuda` for whisper + pyannote |
@@ -106,12 +107,15 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
      and run `ollama pull qwen2.5:3b`.
 4. Set `ADAPTER_MODE=real` and restart the backend.
 
-### Long meetings (hours) — AssemblyAI provider
+### Long meetings (hours) — hosted providers
 
 For recordings of several hours, the local models can be slow (diarization runs
-~3× slower than realtime on CPU). As an alternative, set `ANALYSIS_PROVIDER=assemblyai`:
-transcription and diarization happen server-side in one API call, with no local
-GPU or HF token required.
+~3× slower than realtime on CPU). Two hosted alternatives are available:
+
+#### AssemblyAI
+
+Set `ANALYSIS_PROVIDER=assemblyai`: transcription and diarization happen
+server-side in one API call, with no local GPU or HF token required.
 
 ```bash
 pip install -e ".[dev,nlp,hosted]"
@@ -127,6 +131,27 @@ ASSEMBLYAI_API_KEY=<your key>   # free key at https://www.assemblyai.com
 
 With `ANALYSIS_PROVIDER=assemblyai`, the local faster-whisper and pyannote models
 are not loaded at all — only the AssemblyAI SDK is used.
+
+#### Speechmatics
+
+Set `ANALYSIS_PROVIDER=speechmatics`: uses the Speechmatics batch API which
+auto-detects the number of speakers (no fixed count needed) and offers a
+recurring free tier of ~480 min/month.
+
+```bash
+pip install -e ".[dev,nlp,hosted]"
+```
+
+Then in `backend/.env`:
+
+```
+ADAPTER_MODE=real
+ANALYSIS_PROVIDER=speechmatics
+SPEECHMATICS_API_KEY=<your key>   # key at https://www.speechmatics.com
+```
+
+With `ANALYSIS_PROVIDER=speechmatics`, the local faster-whisper and pyannote
+models are not loaded at all — only the Speechmatics SDK is used.
 
 > Note: the real models need real RAM/CPU (ideally a GPU) and will not run on
 > free deployment tiers. On CPU, diarization runs ~3× slower than realtime, so a

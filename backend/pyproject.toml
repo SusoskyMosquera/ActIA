@@ -32,6 +32,7 @@ nlp = [
 ]
 hosted = [
     "assemblyai",
+    "speechmatics-python",
 ]
 
 [tool.pytest.ini_options]

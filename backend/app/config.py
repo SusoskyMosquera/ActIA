@@ -26,10 +26,13 @@ class Settings(BaseSettings):
 
     # Analysis provider — selectable ("local" uses faster-whisper + pyannote in parallel;
     # "assemblyai" delegates transcription + diarization to AssemblyAI in one hosted call,
-    # which is better suited for long recordings of several hours).
-    analysis_provider: str = "local"  # "local" | "assemblyai"
+    # which is better suited for long recordings of several hours;
+    # "speechmatics" delegates to the Speechmatics batch API which auto-detects speaker
+    # count and offers a recurring free tier of ~480 min/month).
+    analysis_provider: str = "local"  # "local" | "assemblyai" | "speechmatics"
     assemblyai_api_key: str = ""
     assemblyai_speakers_expected: int = 0  # 0 = auto; set the known count to help diarization
+    speechmatics_api_key: str = ""
 
     # Minutes generation — selectable provider
     minutes_provider: str = "gemini"  # "gemini" | "ollama"
