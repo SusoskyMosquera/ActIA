@@ -2,6 +2,7 @@ import UploadForm from '../../components/UploadForm'
 import ProcessingStatus from '../../components/ProcessingStatus'
 import MinutesResult from '../../components/MinutesResult'
 import ErrorBanner from '../../components/ErrorBanner'
+import SystemGuide from '../../components/SystemGuide'
 import { useTranscriptionJob } from './hooks/useTranscriptionJob'
 import { useEstimatedProgress } from './hooks/useEstimatedProgress'
 
@@ -52,6 +53,8 @@ export default function TranscriptionContainer() {
           </button>
         </>
       )}
+
+      {state === 'idle' && <SystemGuide />}
     </div>
   )
 }
