@@ -26,6 +26,10 @@ upload audio → transcribe → diarize → attribute speakers → generate minu
 - **Minutes:** structured summary via a selectable `MinutesGenerator` adapter —
   **Gemini** (default, hosted) or **Ollama** (fully local, open-source,
   nothing leaves your machine).
+- **Export:** download the full acta (metadata + minutes + transcript) as
+  Markdown, Word (.docx), or copy to clipboard — all done in the browser
+  (stateless design). The Word generator is code-split to keep the main
+  bundle light.
 
 Architecture decisions are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 and the ADRs under [`docs/adr/`](docs/adr).
