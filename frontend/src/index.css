@@ -57,7 +57,18 @@ body {
 
 .app-header p {
   color: var(--text-muted);
-  margin-top: 0.25rem;
+  margin-top: 0.5rem;
+}
+
+.app-title {
+  margin: 0;
+  line-height: 0;
+}
+
+.app-logo {
+  width: 96px;
+  height: auto;
+  border-radius: 20px;
 }
 
 /* Cards */

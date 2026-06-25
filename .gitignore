@@ -33,3 +33,6 @@ Thumbs.db
 .claude/settings.local.json
 .claude/launch.json
 .atl/
+
+# Source logo drop (the app uses the optimized frontend/public/logo.png)
+/logo.png
