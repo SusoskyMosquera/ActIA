@@ -18,10 +18,14 @@ upload audio → transcribe → diarize → attribute speakers → generate minu
   loop on a single worker.
 - **Frontend:** React + TypeScript. Container/presentational split — all logic
   lives in the `useTranscriptionJob` hook; components only render.
-- **Processing:** `faster-whisper` (transcription) + `pyannote.audio`
-  (diarization) + minutes via **Gemini or a local LLM through Ollama**
-  (selectable). These are pluggable adapters behind domain ports, so they can be
-  swapped without touching the core.
+- **Analysis:** speaker-attributed segments produced by a selectable
+  `AudioAnalyzer` adapter — `local` (`faster-whisper` + `pyannote.audio` in
+  parallel, on-machine), `assemblyai` (hosted, one-time credit), or
+  `speechmatics` (hosted, recurring free tier, auto speaker detection). Only
+  the chosen adapter is loaded; the domain is untouched.
+- **Minutes:** structured summary via a selectable `MinutesGenerator` adapter —
+  **Gemini** (default, hosted) or **Ollama** (fully local, open-source,
+  nothing leaves your machine).
 
 Architecture decisions are documented in [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md)
 and the ADRs under [`docs/adr/`](docs/adr).
