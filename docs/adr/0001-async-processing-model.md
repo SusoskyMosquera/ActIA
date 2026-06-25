@@ -32,8 +32,10 @@ Adopt an **asynchronous job model with client polling**:
    server).
 3. Models are loaded **once at application startup** (singleton in the
    infrastructure layer), never per request.
-4. The client polls `GET /transcriptions/{job_id}` until status is `DONE` or
-   `ERROR`, reading an intermediate `stage` field for progress UX.
+4. The client polls `GET /transcriptions/{job_id}` until status is `DONE`,
+   `ERROR`, or `CANCELLED`, reading an intermediate `stage` field for progress
+   UX. The user can cancel an in-flight job via `DELETE /transcriptions/{job_id}`;
+   the worker checks a cancellation flag cooperatively between stages.
 5. Job state lives in an **in-memory store** (a dict behind a `JobStore` port).
    Transient, no Redis, no Celery, no DB — consistent with the "lightweight,
    stateless" goal.
@@ -87,7 +89,8 @@ job lifecycle is identical, SSE can be layered on later without redesign.
 ## Consequences
 
 - **Easier:** Long recordings no longer risk timeouts; the UI can show
-  `transcribing → diarizing → generating minutes`; the server stays responsive.
+  `ANALYZING → GENERATING_MINUTES`; the server stays responsive. Cooperative
+  cancellation lets the user abort an in-flight job without killing the process.
 - **Harder:** We must manage the in-memory job lifecycle (status transitions,
   result retention, TTL-based cleanup to avoid unbounded memory growth).
 - **To revisit:** Horizontal scaling or restart-survival would require swapping
@@ -96,9 +99,12 @@ job lifecycle is identical, SSE can be layered on later without redesign.
 
 ## Action Items
 
-1. [ ] Define `JobStore` port and `InMemoryJobStore` adapter.
-2. [ ] Define job states: `PENDING → PROCESSING → DONE | ERROR` with a `stage`.
-3. [ ] Implement a single-worker background runner (`asyncio.to_thread` / a
-       1-worker executor) that pulls jobs and updates state.
-4. [ ] Add a TTL/cleanup policy for finished jobs.
-5. [ ] Load models once via the FastAPI `lifespan` hook.
+1. [x] Define `JobStore` port and `InMemoryJobStore` adapter.
+2. [x] Define job states: `PENDING → PROCESSING → DONE | ERROR | CANCELLED` with
+       stages `ANALYZING | GENERATING_MINUTES` (legacy: `TRANSCRIBING | DIARIZING`).
+3. [x] Implement a single-worker background runner (1-worker `ThreadPoolExecutor`)
+       that pulls jobs and updates state cooperatively.
+4. [x] Cooperative cancellation: `DELETE /transcriptions/{job_id}` sets a flag
+       checked between stages; worker transitions to `CANCELLED` on next check.
+5. [x] Load models once via the FastAPI `lifespan` hook.
+6. [ ] TTL/cleanup policy for finished jobs (unbounded memory growth on long runs).

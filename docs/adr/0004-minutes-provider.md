@@ -6,9 +6,9 @@
 
 ## Context
 
-ADR-0003 selected Gemini for minutes generation. A follow-up requirement
-surfaced: the project is meant to be open source and free, and the audio it
-processes (meeting recordings) is often confidential.
+The initial proposal included Gemini for minutes generation. A follow-up
+requirement surfaced: the project is meant to be open source and free, and the
+audio it processes (meeting recordings) is often confidential.
 
 Verified facts (web research, June 2026):
 
@@ -67,4 +67,6 @@ local RAM/compute; user must install Ollama + pull a model.
 2. [x] `GeminiMinutesGenerator` on the modern `google-genai` SDK.
 3. [x] `MINUTES_PROVIDER` setting + selectable wiring in `dependencies.py`.
 4. [x] Shared prompt builder; CI-safe unit tests (no heavy deps).
-5. [ ] First real run with credentials/models to compare acta quality.
+5. [x] First real run validated on real Spanish audio — Gemini produced a
+       structured acta; quality accepted. Gemini 503 errors handled with
+       exponential-backoff retry (`_is_retryable`, `_call_with_retry`).

@@ -15,8 +15,9 @@ Whisper locally:
   and lighter on memory for the same model weights.
 
 Separately, `pyannote.audio` is **not** a plain `pip install`: it requires a
-Hugging Face account, acceptance of the gated model terms
-(`pyannote/speaker-diarization-3.1`), and a HF access token at runtime.
+Hugging Face account, acceptance of the gated model terms for
+`pyannote/speaker-diarization-community-1` (the pyannote 4.x pipeline), and a
+HF access token at runtime.
 
 ## Decision
 
@@ -26,8 +27,12 @@ Use **`faster-whisper`** as the `AudioTranscriber` adapter.
   `base` on constrained machines) as a precision/speed balance for Spanish
   meetings.
 - Language defaults to Spanish (`es`) but remains configurable / auto-detect.
-- Diarization stays on `pyannote.audio`; the HF token requirement is documented
-  in setup and read from configuration.
+- Diarization stays on `pyannote.audio` (`speaker-diarization-community-1`,
+  pyannote 4.x); the HF token is read from configuration and required at runtime.
+- Both `faster-whisper` and `pyannote` are encapsulated inside
+  `LocalAudioAnalyzer` (see [ADR-0005](./0005-analysis-provider.md)). When a
+  hosted analyzer (`assemblyai` or `speechmatics`) is selected, these local
+  adapters are never loaded.
 
 ## Options Considered
 
@@ -65,14 +70,19 @@ without touching the domain.
 
 - **Easier:** Lower memory and faster turnaround on commodity CPUs;
   configurable model size to trade accuracy for speed.
-- **Harder:** Setup must document the pyannote HF token + gated-model
-  acceptance, or runtime will fail despite a successful install.
+- **Harder:** Setup must document the pyannote HF token + gated-model acceptance
+  (`speaker-diarization-community-1`), or runtime will fail despite a successful
+  install. Only relevant for the `local` analyzer; hosted providers need no HF
+  token.
 - **To revisit:** Model size default may need tuning after testing on real
   Spanish meeting audio.
 
 ## Action Items
 
-1. [ ] Add `faster-whisper` as the transcription dependency.
-2. [ ] Expose `model_size` and `language` via configuration.
-3. [ ] Document HF token + `speaker-diarization-3.1` acceptance in setup/README.
-4. [ ] Benchmark `base` vs `small` on representative Spanish audio.
+1. [x] Add `faster-whisper` as the transcription dependency.
+2. [x] Expose `model_size` and `language` via configuration.
+3. [x] Document HF token + `speaker-diarization-community-1` acceptance in setup/README.
+4. [x] Both adapters encapsulated in `LocalAudioAnalyzer` (ADR-0005); hosted
+       analyzers bypass them entirely.
+5. [ ] Benchmark `base` vs `small` on representative Spanish audio (quality/speed
+       trade-off not yet formally measured).
