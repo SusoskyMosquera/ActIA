@@ -1,0 +1,21 @@
+services:
+  backend:
+    build:
+      context: ./backend
+    # Loads backend/.env when present (ADAPTER_MODE, providers, API keys).
+    # Optional: with no .env the app runs in demo mode (the code default).
+    env_file:
+      - path: ./backend/.env
+        required: false
+    ports:
+      - "8000:8000"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+    ports:
+      - "8080:80"
+    depends_on:
+      - backend
+    restart: unless-stopped
