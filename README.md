@@ -16,7 +16,7 @@ upload audio → transcribe → diarize → attribute speakers → generate minu
 - **Minutes Generation:** The `MinutesGenerator` adapter supports `gemini` (hosted) or `ollama` (fully local and private).
 - **Export:** Browser-side generation of Markdown, Word (.docx) files, or copy to clipboard.
 
-Detailed architecture decisions are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) and the ADRs under [docs/adr/](docs/adr).
+Detailed architecture decisions are documented in [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
 
 ## Running the App
 
@@ -118,17 +118,6 @@ npx tsc --noEmit
 ActIA/
 ├── backend/    # FastAPI server (Domain, Application, Infrastructure, API layers)
 ├── frontend/   # React + TypeScript client (Components, hooks, api)
-└── docs/       # Architecture documents and Architecture Decision Records (ADRs)
+└── docs/       # Architecture documents
 ```
 
-## Project Status
-
-- [x] Architecture closed (ADRs) and documented
-- [x] Backend skeleton (hexagonal) with tests
-- [x] Frontend skeleton (container/presentational + hooks) with tests
-- [x] Demo adapters — full pipeline runs end-to-end
-- [x] Real local adapters (faster-whisper / pyannote / Gemini + Ollama)
-- [x] Hosted analyzers (AssemblyAI + Speechmatics) behind `AudioAnalyzer` port
-- [x] One-command run via Docker Compose (backend API + Nginx frontend)
-- [x] File type/size validation (`400`/`413`) and periodic job cleanup
-- [ ] Managed cloud hosting

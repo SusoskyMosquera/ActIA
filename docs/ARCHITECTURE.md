@@ -1,24 +1,23 @@
 # ActIA — Architecture Blueprint
 
-> Consolidated view of the closed architectural decisions. For the reasoning
-> behind each, see the ADRs in [`docs/adr/`](./adr).
+> Consolidated view of the closed architectural decisions.
 
 ## Decisions at a glance
 
-| # | Decision | ADR |
-|---|----------|-----|
-| 1 | Asynchronous processing: job + polling, in-memory state, no DB/Redis | [ADR-0001](./adr/0001-async-processing-model.md) |
-| 2 | Audio pipeline behind ports (hexagonal); managed cloud hosting frozen, swap-ready | [ADR-0002](./adr/0002-decoupled-audio-pipeline.md) |
-| 3 | `faster-whisper` for transcription; pyannote.audio for diarization | [ADR-0003](./adr/0003-transcription-engine.md) |
-| 4 | Minutes provider selectable — Gemini default, Ollama (OSS/local) option | [ADR-0004](./adr/0004-minutes-provider.md) |
-| 5 | Analysis behind an `AudioAnalyzer` port; AssemblyAI / Speechmatics options for long meetings | [ADR-0005](./adr/0005-analysis-provider.md) |
-| 6 | Containerized one-command run via Docker Compose (backend API + nginx frontend) | [ADR-0006](./adr/0006-containerized-deployment.md) |
+| # | Decision |
+|---|----------|
+| 1 | Asynchronous processing: job + polling, in-memory state, no DB/Redis |
+| 2 | Audio pipeline behind ports (hexagonal); managed cloud hosting frozen, swap-ready |
+| 3 | `faster-whisper` for transcription; pyannote.audio for diarization |
+| 4 | Minutes provider selectable — Gemini default, Ollama (OSS/local) option |
+| 5 | Analysis behind an `AudioAnalyzer` port; AssemblyAI / Speechmatics options for long meetings |
+| 6 | Containerized one-command run via Docker Compose (backend API + nginx frontend) |
 
 ## Processing pipeline
 
 The use case depends on a single high-level port, `AudioAnalyzer`, which returns
 speaker-attributed segments. How those segments are produced is the adapter's
-concern (see [ADR-0005](./adr/0005-analysis-provider.md)):
+concern:
 
 ```
 upload audio
@@ -139,8 +138,7 @@ ActIA/
 │   │   └── main.tsx
 │   └── package.json
 ├── docs/
-│   ├── ARCHITECTURE.md
-│   └── adr/
+│   └── ARCHITECTURE.md
 └── README.md
 ```
 
@@ -153,24 +151,3 @@ ActIA/
 - **Speaker attribution is pure** domain logic — testable without any model.
 - **Frontend** follows container/presentational + hooks (spec requirement):
   polling and state live in `useTranscriptionJob`; components only render.
-
-## Running it
-
-- **Docker (one command):** `docker compose up --build` brings up the backend
-  API and the nginx-served frontend together — open `http://localhost:8080`. The
-  image ships the light hosted providers by default; the heavy local ML stack is
-  opt-in via a build arg. See [ADR-0006](./adr/0006-containerized-deployment.md).
-- **Local dev:** run the backend (`uvicorn`) and frontend (`npm run dev`)
-  separately — see the [README](../README.md) for the step-by-step.
-
-Either way the app boots in **demo mode** (canned data, no keys, no ML);
-`ADAPTER_MODE=real` plus provider settings switches on real processing.
-
-## Setup gotcha (do not skip)
-
-When running the **local** analysis provider, `pyannote.audio` requires a Hugging
-Face account, acceptance of the gated
-`pyannote/speaker-diarization-community-1` terms (the pyannote 4.x model), and a
-HF access token read from configuration. A plain `pip install` will succeed but
-fail at runtime without this. The hosted providers (AssemblyAI / Speechmatics)
-need no HF token — only their own API key.
