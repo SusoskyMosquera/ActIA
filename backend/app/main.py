@@ -1,4 +1,5 @@
 from __future__ import annotations
+import asyncio
 import logging
 import os
 from contextlib import asynccontextmanager
@@ -7,13 +8,32 @@ from typing import AsyncGenerator
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.dependencies import get_use_case
+from app.api.dependencies import get_job_store, get_use_case
 from app.config import get_settings
 from app.api.routes.transcriptions import router as transcriptions_router
 from app.api.schemas import HealthResponse
 from app.workers.job_worker import shutdown_worker
+from app.api.rate_limit import limiter
+from slowapi.errors import RateLimitExceeded
+from slowapi import _rate_limit_exceeded_handler
+
 
 logger = logging.getLogger(__name__)
+
+
+async def periodic_cleanup() -> None:
+    """Periodically remove expired jobs from the in-memory store."""
+    settings = get_settings()
+    store = get_job_store()
+    while True:
+        try:
+            removed = store.cleanup_expired(settings.job_ttl_seconds)
+            if removed > 0:
+                logger.info("Cleaned up %d expired job(s) from memory.", removed)
+        except Exception as e:
+            logger.error("Error in periodic cleanup background task: %s", e)
+        await asyncio.sleep(60)
+
 
 
 @asynccontextmanager
@@ -31,13 +51,24 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
     # stub adapters are replaced.
     logger.info("Loading models (stub — replace with real  init)")
     get_use_case()
+
+    cleanup_task = asyncio.create_task(periodic_cleanup())
     yield
+    cleanup_task.cancel()
+    try:
+        await cleanup_task
+    except asyncio.CancelledError:
+        pass
+
     shutdown_worker()
     logger.info("Shutting down")
 
 
+
 def create_app() -> FastAPI:
     app = FastAPI(title="ActIA", version="0.1.0", lifespan=lifespan)
+    app.state.limiter = limiter
+    app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
     settings = get_settings()
     origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 

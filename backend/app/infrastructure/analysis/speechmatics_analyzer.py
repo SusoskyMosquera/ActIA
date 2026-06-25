@@ -94,11 +94,15 @@ class SpeechmaticsAudioAnalyzer:
                     capture_output=True,
                     text=True,
                     check=True,
+                    timeout=180,
                 )
                 actual_audio_path = temp_wav_path
                 cleanup_temp_wav = True
                 logger.info("Successfully transcoded WebM browser recording to WAV format.")
 
+            except subprocess.TimeoutExpired as e:
+                logger.error("FFmpeg transcoding timed out after 180 seconds.")
+                raise ValueError("FFmpeg transcoding timed out.") from e
             except subprocess.CalledProcessError as e:
                 logger.error("FFmpeg transcoding failed (exit status %d):\n%s", e.returncode, e.stderr)
                 raise ValueError(f"Failed to transcode WebM audio via FFmpeg: {e.stderr.strip()}") from e

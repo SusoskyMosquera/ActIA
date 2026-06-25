@@ -12,6 +12,7 @@ dependencies = [
     "pydantic",
     "pydantic-settings",
     "python-multipart",
+    "slowapi",
 ]
 
 [project.optional-dependencies]

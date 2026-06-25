@@ -43,6 +43,9 @@ class Settings(BaseSettings):
 
     job_ttl_seconds: int = 3600
     cors_origins: str = "http://localhost:5173,http://localhost:3000"
+    max_upload_size_bytes: int = 104857600  # 100 MB default
+    allowed_audio_extensions: str = "wav,mp3,m4a,webm,ogg,mp4,flac,aac"
+
 
 
 @lru_cache

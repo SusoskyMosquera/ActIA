@@ -292,3 +292,17 @@ def test_analyze_transcodes_webm_to_wav(monkeypatch) -> None:
     assert called_args[0][3] == "test_recording.webm"
     assert called_args[0][8].endswith(".wav")
 
+
+def test_analyze_webm_transcode_timeout(monkeypatch) -> None:
+    import subprocess
+
+    def mock_run(args, **kwargs):
+        raise subprocess.TimeoutExpired(cmd=args, timeout=180)
+
+    monkeypatch.setattr(subprocess, "run", mock_run)
+
+    analyzer = SpeechmaticsAudioAnalyzer(api_key="fake-key", language="es")
+    with pytest.raises(ValueError, match="FFmpeg transcoding timed out."):
+        analyzer.analyze("test_recording.webm")
+
+
