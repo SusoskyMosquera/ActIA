@@ -1,21 +1,10 @@
 import ReactMarkdown from 'react-markdown'
 import type { JobResult } from '../features/transcription/types'
+import { formatClock, formatDuration } from '../lib/format'
+import ExportMenu from './ExportMenu'
 
 interface MinutesResultProps {
   result: JobResult
-}
-
-function formatTime(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  return `${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-}
-
-function formatDuration(seconds: number): string {
-  const m = Math.floor(seconds / 60)
-  const s = Math.floor(seconds % 60)
-  if (m === 0) return `${s}s`
-  return `${m}m ${s}s`
 }
 
 export default function MinutesResult({ result }: MinutesResultProps) {
@@ -23,6 +12,8 @@ export default function MinutesResult({ result }: MinutesResultProps) {
 
   return (
     <div className="minutes-result">
+      <ExportMenu result={result} />
+
       <div className="result-section">
         <h2>Detalles</h2>
         <div className="metadata-grid">
@@ -60,7 +51,7 @@ export default function MinutesResult({ result }: MinutesResultProps) {
               <span className="speaker-tag">{segment.speaker}</span>
               <span className="transcript-text">{segment.text}</span>
               <span className="transcript-time">
-                {formatTime(segment.start)} — {formatTime(segment.end)}
+                {formatClock(segment.start)} — {formatClock(segment.end)}
               </span>
             </li>
           ))}

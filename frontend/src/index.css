@@ -82,6 +82,46 @@ body {
   margin-bottom: 1.5rem;
 }
 
+/* Export toolbar */
+.export-menu {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding-bottom: 1.25rem;
+  margin-bottom: 1.25rem;
+  border-bottom: 1px solid var(--border-subtle);
+}
+
+.export-label {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--text-muted);
+  margin-right: 0.25rem;
+}
+
+.export-button {
+  padding: 0.375rem 0.875rem;
+  background-color: var(--surface-2);
+  color: var(--text);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
+}
+
+.export-button:hover:not(:disabled) {
+  border-color: var(--accent);
+  color: var(--accent-text);
+}
+
+.export-button:disabled {
+  color: var(--text-dim);
+  cursor: not-allowed;
+}
+
 .processing-status {
   text-align: center;
 }
