@@ -25,7 +25,6 @@ async def create_transcription(
     background_tasks: BackgroundTasks,
     file: UploadFile,
     language: str = Form("es"),
-    model_size: str = Form("small"),
     num_speakers: int | None = Form(None),
     store: InMemoryJobStore = Depends(get_job_store),
     use_case: GenerateMeetingMinutes = Depends(get_use_case),

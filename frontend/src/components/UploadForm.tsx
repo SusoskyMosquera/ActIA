@@ -10,7 +10,6 @@ interface UploadFormProps {
 export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
   const [file, setFile] = useState<File | null>(null)
   const [language, setLanguage] = useState('es')
-  const [modelSize, setModelSize] = useState('small')
   const [numSpeakers, setNumSpeakers] = useState('')
   const [isDragging, setIsDragging] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -21,7 +20,6 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
 
     const opts: TranscriptionOptions = {
       language,
-      modelSize,
       ...(numSpeakers !== '' && { numSpeakers: Number(numSpeakers) }),
     }
 
@@ -110,34 +108,18 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
         </div>
 
         <div className="form-group">
-          <label htmlFor="model-size">Tamaño del modelo</label>
-          <select
-            id="model-size"
-            value={modelSize}
-            onChange={(e) => setModelSize(e.target.value)}
+          <label htmlFor="num-speakers">Número de oradores (opcional)</label>
+          <input
+            id="num-speakers"
+            type="number"
+            min="1"
+            max="20"
+            placeholder="Automático"
+            value={numSpeakers}
+            onChange={(e) => setNumSpeakers(e.target.value)}
             disabled={isBusy}
-          >
-            <option value="tiny">Tiny (más rápido)</option>
-            <option value="base">Base</option>
-            <option value="small">Small (recomendado)</option>
-            <option value="medium">Medium</option>
-            <option value="large">Large (mejor precisión)</option>
-          </select>
+          />
         </div>
-      </div>
-
-      <div className="form-group">
-        <label htmlFor="num-speakers">Número de oradores (opcional)</label>
-        <input
-          id="num-speakers"
-          type="number"
-          min="1"
-          max="20"
-          placeholder="Automático"
-          value={numSpeakers}
-          onChange={(e) => setNumSpeakers(e.target.value)}
-          disabled={isBusy}
-        />
       </div>
 
       <button

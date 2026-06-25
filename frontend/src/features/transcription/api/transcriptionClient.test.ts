@@ -21,7 +21,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es', modelSize: 'small' })
+      await createTranscription(file, { language: 'es' })
 
       expect(fetchSpy).toHaveBeenCalledOnce()
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
@@ -29,7 +29,7 @@ describe('transcriptionClient', () => {
       expect(init.method).toBe('POST')
     })
 
-    it('includes file, language, and model_size in FormData', async () => {
+    it('includes file and language in FormData', async () => {
       let capturedBody: unknown = null
 
       vi.spyOn(globalThis, 'fetch').mockImplementationOnce(
@@ -43,11 +43,10 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'en', modelSize: 'medium' })
+      await createTranscription(file, { language: 'en' })
 
       expect(capturedBody).not.toBeNull()
       expect((capturedBody as FormData).get('language')).toBe('en')
-      expect((capturedBody as FormData).get('model_size')).toBe('medium')
       expect((capturedBody as FormData).get('file')).toBe(file)
     })
 
@@ -65,7 +64,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es', modelSize: 'small', numSpeakers: 3 })
+      await createTranscription(file, { language: 'es', numSpeakers: 3 })
 
       expect((capturedBody as FormData).get('num_speakers')).toBe('3')
     })
@@ -84,7 +83,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es', modelSize: 'small' })
+      await createTranscription(file, { language: 'es' })
 
       expect((capturedBody as FormData).has('num_speakers')).toBe(false)
     })
@@ -98,7 +97,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      const result = await createTranscription(file, { language: 'es', modelSize: 'small' })
+      const result = await createTranscription(file, { language: 'es' })
 
       expect(result.jobId).toBe('xyz789')
       expect(result.status).toBe('PENDING')
@@ -114,7 +113,7 @@ describe('transcriptionClient', () => {
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
       await expect(
-        createTranscription(file, { language: 'es', modelSize: 'small' }),
+        createTranscription(file, { language: 'es' }),
       ).rejects.toThrow(ApiError)
 
       vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
@@ -125,7 +124,7 @@ describe('transcriptionClient', () => {
       )
 
       await expect(
-        createTranscription(file, { language: 'es', modelSize: 'small' }),
+        createTranscription(file, { language: 'es' }),
       ).rejects.toMatchObject({ status: 422, message: 'Invalid file type' })
     })
   })

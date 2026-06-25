@@ -40,7 +40,6 @@ export async function createTranscription(
   const formData = new FormData()
   formData.append('file', file)
   formData.append('language', opts.language)
-  formData.append('model_size', opts.modelSize)
   if (opts.numSpeakers !== undefined) {
     formData.append('num_speakers', String(opts.numSpeakers))
   }

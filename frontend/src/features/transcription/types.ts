@@ -42,7 +42,6 @@ export interface CreateTranscriptionResponse {
 
 export interface TranscriptionOptions {
   language: string
-  modelSize: string
   numSpeakers?: number
 }
 
