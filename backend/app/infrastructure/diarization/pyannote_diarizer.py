@@ -40,8 +40,14 @@ class PyannoteDiarizer:
                 "token and accept the gated model terms on Hugging Face."
             )
 
-        from pyannote.audio import Pipeline  # lazy heavy import
+        import warnings
         import torch
+
+        # pyannote 4.x prints a long torchcodec warning at import time. We decode
+        # audio ourselves (see diarize) and never use torchcodec, so silence it.
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            from pyannote.audio import Pipeline  # lazy heavy import
 
         pipeline = Pipeline.from_pretrained(model_name, token=hf_token)
         # from_pretrained returns None (instead of raising) when the token is
