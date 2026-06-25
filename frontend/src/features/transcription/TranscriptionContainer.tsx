@@ -15,6 +15,8 @@ export default function TranscriptionContainer() {
     startedAt,
     estimatedTotalMs,
     isBusy,
+    stage,
+    state,
   )
 
   return (
