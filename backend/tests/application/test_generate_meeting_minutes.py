@@ -1,7 +1,7 @@
 from __future__ import annotations
 import pytest
 from app.application.generate_meeting_minutes import GenerateMeetingMinutes
-from app.domain.models import JobStage, JobStatus
+from app.domain.models import JobStatus, SpeakerTurn, TranscriptSegment
 from app.infrastructure.jobs.in_memory_job_store import InMemoryJobStore
 from tests.fakes.adapters import (
     FakeDiarizer,
@@ -147,3 +147,33 @@ def test_non_cancelled_run_still_reaches_done() -> None:
     assert final is not None
     assert final.status == JobStatus.DONE
     assert final.result is not None
+
+
+def test_transcription_and_diarization_run_in_parallel() -> None:
+    """The two independent stages should run concurrently, not sequentially."""
+    import time
+
+    class _SlowTranscriber:
+        def transcribe(self, audio_path: str) -> list[TranscriptSegment]:
+            time.sleep(0.5)
+            return [TranscriptSegment(start=0.0, end=1.0, text="hi")]
+
+    class _SlowDiarizer:
+        def diarize(self, audio_path: str) -> list[SpeakerTurn]:
+            time.sleep(0.5)
+            return [SpeakerTurn(start=0.0, end=1.0, speaker="SPEAKER_00")]
+
+    use_case, store = make_use_case(
+        transcriber=_SlowTranscriber(), diarizer=_SlowDiarizer()
+    )
+    job = store.create()
+
+    start = time.perf_counter()
+    use_case.execute(job.id, "fake/path.wav")
+    elapsed = time.perf_counter() - start
+
+    final = store.get(job.id)
+    assert final is not None
+    assert final.status == JobStatus.DONE
+    # Parallel ~0.5s; sequential would be ~1.0s. Generous upper bound.
+    assert elapsed < 0.85

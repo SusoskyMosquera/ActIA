@@ -1,6 +1,7 @@
 export type JobStatus = 'PENDING' | 'PROCESSING' | 'DONE' | 'ERROR' | 'CANCELLED'
 
 export type ProcessingStage =
+  | 'ANALYZING'
   | 'TRANSCRIBING'
   | 'DIARIZING'
   | 'GENERATING_MINUTES'

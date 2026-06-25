@@ -6,6 +6,7 @@ interface ProcessingStatusProps {
 }
 
 const STAGE_LABELS: Record<NonNullable<ProcessingStage>, string> = {
+  ANALYZING: 'Analizando el audio (transcripción y oradores)...',
   TRANSCRIBING: 'Transcribiendo el audio...',
   DIARIZING: 'Identificando oradores...',
   GENERATING_MINUTES: 'Generando el acta...',

@@ -1,4 +1,6 @@
 from __future__ import annotations
+from concurrent.futures import ThreadPoolExecutor
+
 from app.domain.models import (
     AttributedSegment,
     JobStage,
@@ -42,20 +44,24 @@ class GenerateMeetingMinutes:
     def execute(self, job_id: str, audio_path: str) -> None:
         """Run the full pipeline. Catches all exceptions and marks the job ERROR.
 
-        Cancellation checkpoints are inserted before each stage. If a cancel is
-        requested the job is marked CANCELLED and the method returns early without
-        running the remaining stages.
+        Transcription and diarization are independent (both only read the audio),
+        so they run in parallel under a single ANALYZING stage. Cancellation
+        checkpoints sit at the stage boundaries; if a cancel is requested the job
+        is marked CANCELLED and the method returns without running further stages.
         """
         try:
             if self._check_cancelled(job_id):
                 return
-            self._store.set_stage(job_id, JobStage.TRANSCRIBING)
-            segments = self._transcriber.transcribe(audio_path)
 
-            if self._check_cancelled(job_id):
-                return
-            self._store.set_stage(job_id, JobStage.DIARIZING)
-            turns = self._diarizer.diarize(audio_path)
+            # faster-whisper (CTranslate2) and pyannote (torch) release the GIL
+            # during inference, so running both in threads gives real parallelism:
+            # wall time ~= max(transcribe, diarize) instead of their sum.
+            self._store.set_stage(job_id, JobStage.ANALYZING)
+            with ThreadPoolExecutor(max_workers=2) as pool:
+                segments_future = pool.submit(self._transcriber.transcribe, audio_path)
+                turns_future = pool.submit(self._diarizer.diarize, audio_path)
+                segments = segments_future.result()
+                turns = turns_future.result()
 
             if self._check_cancelled(job_id):
                 return

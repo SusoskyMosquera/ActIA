@@ -54,6 +54,10 @@ class JobStatus(str, Enum):
 
 
 class JobStage(str, Enum):
+    # Transcription and diarization run in parallel under a single ANALYZING
+    # stage, then minutes are generated. TRANSCRIBING/DIARIZING remain as valid
+    # sub-activity labels.
+    ANALYZING = "ANALYZING"
     TRANSCRIBING = "TRANSCRIBING"
     DIARIZING = "DIARIZING"
     GENERATING_MINUTES = "GENERATING_MINUTES"
