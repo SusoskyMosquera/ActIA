@@ -82,6 +82,7 @@ def get_analyzer() -> AudioAnalyzer:
         return AssemblyAIAudioAnalyzer(
             api_key=settings.assemblyai_api_key,
             language=settings.language,
+            speakers_expected=settings.assemblyai_speakers_expected,
         )
     # Default local path: faster-whisper + pyannote run in parallel.
     return LocalAudioAnalyzer(get_transcriber(), get_diarizer())

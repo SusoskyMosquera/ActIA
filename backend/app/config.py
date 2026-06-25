@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     # which is better suited for long recordings of several hours).
     analysis_provider: str = "local"  # "local" | "assemblyai"
     assemblyai_api_key: str = ""
+    assemblyai_speakers_expected: int = 0  # 0 = auto; set the known count to help diarization
 
     # Minutes generation — selectable provider
     minutes_provider: str = "gemini"  # "gemini" | "ollama"
