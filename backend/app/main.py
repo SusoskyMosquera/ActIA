@@ -38,10 +38,12 @@ async def lifespan(app: FastAPI) -> AsyncGenerator[None, None]:
 
 def create_app() -> FastAPI:
     app = FastAPI(title="ActIA", version="0.1.0", lifespan=lifespan)
+    settings = get_settings()
+    origins = [o.strip() for o in settings.cors_origins.split(",") if o.strip()]
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=["http://localhost:5173", "http://localhost:3000"],
+        allow_origins=origins,
         allow_credentials=True,
         allow_methods=["*"],
         allow_headers=["*"],

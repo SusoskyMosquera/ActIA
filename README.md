@@ -100,6 +100,7 @@ Copy `backend/.env.example` to `backend/.env` and adjust as needed.
 |----------|---------|---------|
 | `ADAPTER_MODE` | `demo` | `demo` (canned data) or `real` (actual ML + LLM) |
 | `DEMO_DELAY_SECONDS` | `1.5` | Per-stage delay in demo mode so the UI shows progress |
+| `CORS_ORIGINS` | `http://localhost:5173,http://localhost:3000` | Comma-separated list of allowed CORS origins for production deployment |
 | `ANALYSIS_PROVIDER` | `local` | `local` (faster-whisper + pyannote on-machine), `assemblyai` (hosted, good for long meetings), or `speechmatics` (hosted, auto speaker detection, ~480 min/month free tier) |
 | `ASSEMBLYAI_API_KEY` | — | Required when `ANALYSIS_PROVIDER=assemblyai` (free key at assemblyai.com) |
 | `SPEECHMATICS_API_KEY` | — | Required when `ANALYSIS_PROVIDER=speechmatics` (key at speechmatics.com) |

@@ -42,6 +42,7 @@ class Settings(BaseSettings):
     ollama_model: str = "qwen2.5:3b"
 
     job_ttl_seconds: int = 3600
+    cors_origins: str = "http://localhost:5173,http://localhost:3000"
 
 
 @lru_cache
