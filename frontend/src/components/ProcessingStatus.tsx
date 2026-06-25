@@ -4,8 +4,6 @@ interface ProcessingStatusProps {
   stage: ProcessingStage
   status: AppState
   progress: number | null
-  elapsedMs: number
-  remainingMs: number | null
 }
 
 const STAGE_LABELS: Record<NonNullable<ProcessingStage>, string> = {
@@ -23,15 +21,7 @@ function getStageLabel(stage: ProcessingStage, status: AppState): string {
   return 'Procesando...'
 }
 
-function formatClock(ms: number): string {
-  const totalSeconds = Math.max(0, Math.floor(ms / 1000))
-  const minutes = Math.floor(totalSeconds / 60)
-  const seconds = totalSeconds % 60
-  if (minutes === 0) return `${seconds}s`
-  return `${minutes}m ${seconds}s`
-}
-
-export default function ProcessingStatus({ stage, status, progress, elapsedMs, remainingMs }: ProcessingStatusProps) {
+export default function ProcessingStatus({ stage, status, progress }: ProcessingStatusProps) {
   const isIndeterminate = progress === null
 
   return (
@@ -49,12 +39,6 @@ export default function ProcessingStatus({ stage, status, progress, elapsedMs, r
           aria-valuemax={100}
         />
       </div>
-
-      <p className="progress-meta">
-        {remainingMs !== null
-          ? `~${formatClock(remainingMs)} restantes (estimado)`
-          : `Transcurrido: ${formatClock(elapsedMs)}`}
-      </p>
 
       <p className="status-subtitle">Esto puede tardar unos minutos</p>
     </div>

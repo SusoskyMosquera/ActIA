@@ -11,7 +11,7 @@ export default function TranscriptionContainer() {
     useTranscriptionJob()
 
   const isBusy = state === 'submitting' || state === 'processing'
-  const { progress, elapsedMs, remainingMs } = useEstimatedProgress(
+  const { progress } = useEstimatedProgress(
     startedAt,
     estimatedTotalMs,
     isBusy,
@@ -27,8 +27,6 @@ export default function TranscriptionContainer() {
             stage={stage}
             status={state}
             progress={progress}
-            elapsedMs={elapsedMs}
-            remainingMs={remainingMs}
           />
           <button className="cancel-btn" onClick={() => void cancel()}>
             Cancelar
