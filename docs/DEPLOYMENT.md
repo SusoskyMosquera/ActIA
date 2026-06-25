@@ -21,7 +21,7 @@ To ensure stability, scalability, and compatibility of the application with serv
 
 ---
 
-## Production Links and Endpoints
+## Production Links & Endpoints
 
 * **Web Application (Frontend):** [https://act-ia.vercel.app/](https://act-ia.vercel.app/)
 * **Production API (Backend):** [https://actia.onrender.com/](https://actia.onrender.com/)
@@ -30,7 +30,7 @@ To ensure stability, scalability, and compatibility of the application with serv
 
 ---
 
-## Configuration and Environment Variables
+## Configuration & Environment Variables
 
 ### 1. Frontend (Vercel)
 In the Vercel project settings dashboard, configure the following parameters:
@@ -51,14 +51,14 @@ In the **Environment** tab of the web service in the Render control panel, confi
   * `CORS_ORIGINS`: `http://localhost:5173,https://act-ia.vercel.app` *(Allows requests from both the local development server and the production frontend. Must be comma-separated without spaces and without a trailing slash `/`)*
   * `ADAPTER_MODE`: `real`
   * `ANALYSIS_PROVIDER`: `assemblyai` *(or `speechmatics`, recommended for free tiers/CPUs without GPUs to avoid resource exhaustion)*
-  * `ASSEMBLYAI_API_KEY`: *(Your AssemblyAI API key)*
+  * `ASSEMBAI_API_KEY`: *(Your AssemblyAI API key)*
   * `GEMINI_API_KEY`: *(Your Google AI Studio API key)*
 
 ---
 
-## Gotchas and Troubleshooting
+## Gotchas & Troubleshooting
 
-### 1. CORS Error (CORS Missing Allow Origin)
+### 1. CORS Error (`CORS Missing Allow Origin`)
 If the browser throws CORS errors when attempting to run a transcription job, verify:
 * **Missing origin in `CORS_ORIGINS`:** Make sure the exact origin from which you are making the request is listed in the backend's `CORS_ORIGINS` variable. The production frontend needs `https://act-ia.vercel.app`. Testing locally requires `http://localhost:5173`.
 * **Trailing slash (`/`):** The browser sends the `Origin` header without a trailing slash (e.g., `https://act-ia.vercel.app`). If you configured the variable with a trailing slash (`https://act-ia.vercel.app/`), the backend will reject the request due to a mismatch.
