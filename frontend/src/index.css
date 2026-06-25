@@ -130,46 +130,40 @@ body {
   cursor: not-allowed;
 }
 
-/* Custom file input (so the control text is Spanish, not browser-native) */
-.file-input {
+/* Drag-and-drop file zone */
+.dropzone {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
+  justify-content: center;
+  min-height: 90px;
+  padding: 1rem;
+  border: 2px dashed var(--border);
+  border-radius: 8px;
   background-color: var(--surface-2);
-  padding: 0.4rem 0.5rem;
-}
-
-.file-button {
-  flex-shrink: 0;
-  padding: 0.35rem 0.75rem;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  background: var(--surface);
-  color: var(--text);
-  font-size: 0.8rem;
+  color: var(--text-muted);
   cursor: pointer;
+  text-align: center;
+  transition: border-color 0.15s, background-color 0.15s, color 0.15s;
 }
 
-.file-button:hover {
+.dropzone:hover {
   border-color: var(--accent);
 }
 
-.file-name {
-  font-size: 0.8rem;
-  color: var(--text-muted);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+.dropzone.is-dragover {
+  border-color: var(--accent);
+  background-color: var(--accent-soft);
+  color: var(--text);
 }
 
-.file-input.is-disabled {
+.dropzone.is-disabled {
   opacity: 0.5;
+  cursor: not-allowed;
 }
 
-.file-input.is-disabled .file-button {
-  cursor: not-allowed;
+.dropzone-text {
+  font-size: 0.875rem;
+  word-break: break-all;
 }
 
 .visually-hidden {

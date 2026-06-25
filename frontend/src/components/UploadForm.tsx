@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import type { FormEvent } from 'react'
+import { useRef, useState } from 'react'
+import type { DragEvent, FormEvent } from 'react'
 import type { TranscriptionOptions } from '../features/transcription/types'
 
 interface UploadFormProps {
@@ -12,6 +12,8 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
   const [language, setLanguage] = useState('es')
   const [modelSize, setModelSize] = useState('small')
   const [numSpeakers, setNumSpeakers] = useState('')
+  const [isDragging, setIsDragging] = useState(false)
+  const inputRef = useRef<HTMLInputElement>(null)
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault()
@@ -26,18 +28,57 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
     onSubmit(file, opts)
   }
 
+  const acceptDropped = (dropped: File | undefined) => {
+    if (!dropped) return
+    // Accept audio files; some browsers leave the type empty for certain files.
+    if (dropped.type === '' || dropped.type.startsWith('audio/')) {
+      setFile(dropped)
+    }
+  }
+
+  const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    if (!isBusy) setIsDragging(true)
+  }
+
+  const handleDragLeave = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+  }
+
+  const handleDrop = (e: DragEvent<HTMLDivElement>) => {
+    e.preventDefault()
+    setIsDragging(false)
+    if (!isBusy) acceptDropped(e.dataTransfer.files?.[0])
+  }
+
+  const openPicker = () => {
+    if (!isBusy) inputRef.current?.click()
+  }
+
   return (
     <form className="upload-form" onSubmit={handleSubmit}>
       <h2>Subir grabación de audio</h2>
 
       <div className="form-group">
         <label htmlFor="audio-file">Archivo de audio</label>
-        <div className={`file-input${isBusy ? ' is-disabled' : ''}`}>
-          <label htmlFor="audio-file" className="file-button">Elegir archivo</label>
-          <span className="file-name">
-            {file ? file.name : 'Ningún archivo seleccionado'}
-          </span>
+        <div
+          className={`dropzone${isDragging ? ' is-dragover' : ''}${isBusy ? ' is-disabled' : ''}`}
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={openPicker}
+          role="button"
+          tabIndex={isBusy ? -1 : 0}
+          onKeyDown={(e) => {
+            if ((e.key === 'Enter' || e.key === ' ') && !isBusy) {
+              e.preventDefault()
+              openPicker()
+            }
+          }}
+        >
           <input
+            ref={inputRef}
             id="audio-file"
             className="visually-hidden"
             type="file"
@@ -45,6 +86,11 @@ export default function UploadForm({ onSubmit, isBusy }: UploadFormProps) {
             disabled={isBusy}
             onChange={(e) => setFile(e.target.files?.[0] ?? null)}
           />
+          <p className="dropzone-text">
+            {file
+              ? file.name
+              : 'Arrastra un archivo de audio aquí o haz click para elegir un archivo'}
+          </p>
         </div>
       </div>
 
