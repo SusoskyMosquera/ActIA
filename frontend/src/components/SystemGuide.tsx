@@ -7,7 +7,7 @@ const STEPS: GuideStep[] = [
   {
     title: 'Subes el audio',
     description:
-      'Arrastra la grabación de tu reunión o hacé clic para elegirla. Acepta los formatos de audio comunes (WAV, MP3, M4A…).',
+      'Arrastra la grabación de tu reunión o haz clic para elegirla. Acepta los formatos de audio comunes (WAV, MP3, M4A…).',
   },
   {
     title: 'Se transcribe',
@@ -31,7 +31,7 @@ export default function SystemGuide() {
       <h2>¿Cómo funciona?</h2>
       <p className="guide-intro">
         ActIA convierte la grabación de tu reunión en un acta estructurada. Solo
-        subís el archivo — del resto se encarga el sistema.
+        subes el archivo — del resto se encarga el sistema.
       </p>
 
       <ol className="guide-steps">
@@ -49,8 +49,8 @@ export default function SystemGuide() {
       </ol>
 
       <p className="guide-footer">
-        El procesamiento corre en segundo plano: podés cancelarlo cuando quieras y
-        un sonido te avisa cuando el acta está lista. El tiempo depende de la
+        El procesamiento corre en segundo plano: puedes cancelarlo cuando quieras
+        y un sonido te avisa cuando el acta está lista. El tiempo depende de la
         duración del audio.
       </p>
     </section>

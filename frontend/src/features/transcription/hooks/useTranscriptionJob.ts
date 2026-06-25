@@ -10,7 +10,7 @@ import type {
 } from '../types'
 
 // Rough CPU heuristic: diarization runs ~3x realtime + model load overhead
-const CPU_FACTOR = 3.5
+const CPU_FACTOR = 0.8
 const BASE_OVERHEAD_MS = 10000
 
 const POLL_INTERVAL_MS = 2000
