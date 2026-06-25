@@ -4,22 +4,21 @@ import MinutesResult from '../../components/MinutesResult'
 import ErrorBanner from '../../components/ErrorBanner'
 import { useTranscriptionJob } from './hooks/useTranscriptionJob'
 import { useEstimatedProgress } from './hooks/useEstimatedProgress'
-import type { TranscriptionOptions } from './types'
 
 export default function TranscriptionContainer() {
-  const { state, stage, result, error, startedAt, estimatedTotalMs, submit, reset, cancel } = useTranscriptionJob()
+  const { state, stage, result, error, startedAt, estimatedTotalMs, submit, reset, cancel } =
+    useTranscriptionJob()
 
   const isBusy = state === 'submitting' || state === 'processing'
-  const isActive = state === 'submitting' || state === 'processing'
-  const { progress, elapsedMs, remainingMs } = useEstimatedProgress(startedAt, estimatedTotalMs, isActive)
-
-  const handleSubmit = (file: File, opts: TranscriptionOptions) => {
-    void submit(file, opts)
-  }
+  const { progress, elapsedMs, remainingMs } = useEstimatedProgress(
+    startedAt,
+    estimatedTotalMs,
+    isBusy,
+  )
 
   return (
     <div>
-      <UploadForm onSubmit={handleSubmit} isBusy={isBusy} />
+      <UploadForm onSubmit={(file) => void submit(file)} isBusy={isBusy} />
 
       {(state === 'submitting' || state === 'processing') && (
         <>

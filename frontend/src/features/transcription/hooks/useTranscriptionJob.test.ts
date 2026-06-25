@@ -42,7 +42,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     // After submission completes
@@ -84,7 +84,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -134,7 +134,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -172,7 +172,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -210,7 +210,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -241,7 +241,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -281,7 +281,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      void result.current.submit(file, { language: 'es' })
+      void result.current.submit(file)
     })
 
     await act(async () => {
@@ -312,7 +312,7 @@ describe('useTranscriptionJob', () => {
     const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
     await act(async () => {
-      await result.current.submit(file, { language: 'es' })
+      await result.current.submit(file)
     })
 
     expect(result.current.state).toBe('error')
@@ -336,7 +336,7 @@ describe('useTranscriptionJob', () => {
 
       // Submit → processing
       await act(async () => {
-        void result.current.submit(file, { language: 'es' })
+        void result.current.submit(file)
       })
       await act(async () => { await vi.runAllTicks() })
 
@@ -373,7 +373,7 @@ describe('useTranscriptionJob', () => {
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
       await act(async () => {
-        void result.current.submit(file, { language: 'es' })
+        void result.current.submit(file)
       })
       await act(async () => { await vi.runAllTicks() })
 
@@ -420,7 +420,7 @@ describe('useTranscriptionJob', () => {
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
 
       await act(async () => {
-        void result.current.submit(file, { language: 'es' })
+        void result.current.submit(file)
       })
       await act(async () => { await vi.runAllTicks() })
 

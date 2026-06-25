@@ -21,7 +21,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es' })
+      await createTranscription(file)
 
       expect(fetchSpy).toHaveBeenCalledOnce()
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
@@ -29,7 +29,7 @@ describe('transcriptionClient', () => {
       expect(init.method).toBe('POST')
     })
 
-    it('includes file and language in FormData', async () => {
+    it('includes the file in FormData', async () => {
       let capturedBody: unknown = null
 
       vi.spyOn(globalThis, 'fetch').mockImplementationOnce(
@@ -43,49 +43,10 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'en' })
+      await createTranscription(file)
 
       expect(capturedBody).not.toBeNull()
-      expect((capturedBody as FormData).get('language')).toBe('en')
       expect((capturedBody as FormData).get('file')).toBe(file)
-    })
-
-    it('includes num_speakers when provided', async () => {
-      let capturedBody: unknown = null
-
-      vi.spyOn(globalThis, 'fetch').mockImplementationOnce(
-        async (_url: string | URL | Request, init?: RequestInit) => {
-          capturedBody = init?.body
-          return new Response(JSON.stringify({ job_id: 'abc123', status: 'PENDING' }), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' },
-          })
-        },
-      )
-
-      const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es', numSpeakers: 3 })
-
-      expect((capturedBody as FormData).get('num_speakers')).toBe('3')
-    })
-
-    it('omits num_speakers when not provided', async () => {
-      let capturedBody: unknown = null
-
-      vi.spyOn(globalThis, 'fetch').mockImplementationOnce(
-        async (_url: string | URL | Request, init?: RequestInit) => {
-          capturedBody = init?.body
-          return new Response(JSON.stringify({ job_id: 'abc123', status: 'PENDING' }), {
-            status: 202,
-            headers: { 'Content-Type': 'application/json' },
-          })
-        },
-      )
-
-      const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await createTranscription(file, { language: 'es' })
-
-      expect((capturedBody as FormData).has('num_speakers')).toBe(false)
     })
 
     it('maps job_id to jobId in the response', async () => {
@@ -97,7 +58,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      const result = await createTranscription(file, { language: 'es' })
+      const result = await createTranscription(file)
 
       expect(result.jobId).toBe('xyz789')
       expect(result.status).toBe('PENDING')
@@ -112,9 +73,7 @@ describe('transcriptionClient', () => {
       )
 
       const file = new File(['audio'], 'test.mp3', { type: 'audio/mpeg' })
-      await expect(
-        createTranscription(file, { language: 'es' }),
-      ).rejects.toThrow(ApiError)
+      await expect(createTranscription(file)).rejects.toThrow(ApiError)
 
       vi.spyOn(globalThis, 'fetch').mockResolvedValueOnce(
         new Response(JSON.stringify({ detail: 'Invalid file type' }), {
@@ -123,9 +82,10 @@ describe('transcriptionClient', () => {
         }),
       )
 
-      await expect(
-        createTranscription(file, { language: 'es' }),
-      ).rejects.toMatchObject({ status: 422, message: 'Invalid file type' })
+      await expect(createTranscription(file)).rejects.toMatchObject({
+        status: 422,
+        message: 'Invalid file type',
+      })
     })
   })
 
@@ -138,7 +98,8 @@ describe('transcriptionClient', () => {
         }),
       )
 
-      await import('./transcriptionClient').then(m => m.cancelTranscription('abc123'))
+      const { cancelTranscription } = await import('./transcriptionClient')
+      await cancelTranscription('abc123')
 
       expect(fetchSpy).toHaveBeenCalledOnce()
       const [url, init] = fetchSpy.mock.calls[0] as [string, RequestInit]
@@ -166,7 +127,7 @@ describe('transcriptionClient', () => {
           JSON.stringify({
             job_id: 'abc123',
             status: 'PROCESSING',
-            stage: 'TRANSCRIBING',
+            stage: 'ANALYZING',
             result: null,
             error: null,
           }),
@@ -187,7 +148,7 @@ describe('transcriptionClient', () => {
         result: {
           transcript: [{ speaker: 'SPEAKER_00', start: 0, end: 5, text: 'Hello' }],
           minutes: '# Minutes',
-          metadata: { duration_sec: 5, language: 'es', num_speakers: 1, model: 'small' },
+          metadata: { duration_sec: 5, language: 'es', num_speakers: 1, model: 'assemblyai' },
         },
         error: null,
       }

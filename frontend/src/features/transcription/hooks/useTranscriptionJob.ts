@@ -7,7 +7,6 @@ import type {
   JobResult,
   JobStatusResponse,
   ProcessingStage,
-  TranscriptionOptions,
 } from '../types'
 
 // Rough CPU heuristic: diarization runs ~3x realtime + model load overhead
@@ -32,7 +31,7 @@ interface UseTranscriptionJobReturn {
   error: string | null
   startedAt: number | null
   estimatedTotalMs: number | null
-  submit: (file: File, opts: TranscriptionOptions) => Promise<void>
+  submit: (file: File) => Promise<void>
   reset: () => void
   cancel: () => Promise<void>
 }
@@ -105,7 +104,7 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
   )
 
   const submit = useCallback(
-    async (file: File, opts: TranscriptionOptions) => {
+    async (file: File) => {
       // Runs from a user gesture — unlock audio for autoplay policy
       unlockAudio()
       setStartedAt(Date.now())
@@ -122,7 +121,7 @@ export function useTranscriptionJob(): UseTranscriptionJobReturn {
       setStage(null)
 
       try {
-        const { jobId: newJobId } = await createTranscription(file, opts)
+        const { jobId: newJobId } = await createTranscription(file)
         setJobId(newJobId)
         setState('processing')
         startPolling(newJobId)

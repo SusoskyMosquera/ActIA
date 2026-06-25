@@ -1,7 +1,6 @@
 import type {
   CreateTranscriptionResponse,
   JobStatusResponse,
-  TranscriptionOptions,
 } from '../types'
 
 const DEFAULT_BASE_URL = '/api/v1'
@@ -35,14 +34,9 @@ async function assertOk(response: Response): Promise<void> {
 
 export async function createTranscription(
   file: File,
-  opts: TranscriptionOptions,
 ): Promise<CreateTranscriptionResponse> {
   const formData = new FormData()
   formData.append('file', file)
-  formData.append('language', opts.language)
-  if (opts.numSpeakers !== undefined) {
-    formData.append('num_speakers', String(opts.numSpeakers))
-  }
 
   const response = await fetch(`${getBaseUrl()}/transcriptions/`, {
     method: 'POST',

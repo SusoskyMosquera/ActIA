@@ -40,9 +40,4 @@ export interface CreateTranscriptionResponse {
   status: JobStatus
 }
 
-export interface TranscriptionOptions {
-  language: string
-  numSpeakers?: number
-}
-
 export type AppState = 'idle' | 'submitting' | 'processing' | 'done' | 'error'

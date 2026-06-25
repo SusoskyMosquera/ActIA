@@ -2,7 +2,7 @@ from __future__ import annotations
 import os
 import shutil
 import tempfile
-from fastapi import APIRouter, BackgroundTasks, Depends, Form, HTTPException, UploadFile
+from fastapi import APIRouter, BackgroundTasks, Depends, HTTPException, UploadFile
 
 from app.api.dependencies import get_job_store, get_use_case
 from app.api.schemas import (
@@ -24,8 +24,6 @@ router = APIRouter()
 async def create_transcription(
     background_tasks: BackgroundTasks,
     file: UploadFile,
-    language: str = Form("es"),
-    num_speakers: int | None = Form(None),
     store: InMemoryJobStore = Depends(get_job_store),
     use_case: GenerateMeetingMinutes = Depends(get_use_case),
 ) -> JobCreatedResponse:
